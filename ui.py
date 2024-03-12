@@ -27,6 +27,7 @@ class Window(Tk):
         super().__init__();
         self.size = int(pag.size()[1] * 2 / 3)
         self.geometry(str(self.size) + "x" + str(self.size));
+        self.resizable(False, False);
         
         # construct the label
         self.label = Label(self);
