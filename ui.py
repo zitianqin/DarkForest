@@ -13,6 +13,10 @@ from math import *
 
 BUFF_PNG_FILE = "buff.png";
 
+winS = int(pag.size()[1] * 2 / 3);
+sqS = floor(winS / 8);
+transCol = "#abc123";
+
 # picture displayed
 class Board(chess.Board):
     def __init__(self):
@@ -28,9 +32,9 @@ class Board(chess.Board):
 class Window(Tk):
     def __init__(self):
         super().__init__();
-        self.size = int(pag.size()[1] * 2 / 3)
-        self.geometry(str(self.size) + "x" + str(self.size));
+        self.geometry(str(winS) + "x" + str(winS));
         self.resizable(False, False);
+        self.attributes("-transparentcolor", "white");
         
         # construct the label
         self.label = Label(self);
@@ -42,37 +46,48 @@ class Window(Tk):
         
         # convert and resizing to viewport
         boardPng = Image.open(BUFF_PNG_FILE);
-        boardPng = ImageTk.PhotoImage(boardPng.resize((self.size, self.size)));
+        boardPng = ImageTk.PhotoImage(boardPng.resize((winS, winS)));
         
         # draw the image
         self.label.config(image=boardPng);
         self.label.image = boardPng;
         board.deleteDisplayPng();
 
+# converts move sequence to SAN representation
+def sanM(move):
+    return chess.Move.from_uci(move);
+
 # handles the clicking of a piece
-def handleClick(event):
-    print(str(event.x), str(event.y));
+currM = ""; # stores current user move sequence
+def handleClick(self, event):
+    global currM;
+    sqPos = chr(self.x + ord("a")) + str(8 - self.y);
+    currM += sqPos;
+    
+    # check if move was made
+    if len(currM) == 4:
+        if sanM(currM) in board.legal_moves:
+            print(currM);
+        currM = "";
 
 class Square(Frame):
-    def __init__(self, master, size, i, j ):
-        colours = ["white", "black"];
-        side = floor(size / 8);
+    def __init__(self, master, i, j ):
         super().__init__(
             master=master,
-            width=side,
-            height=side,
-            background=colours[(i + j) % 2]
+            width=sqS,
+            height=sqS,
+            bg=transCol
         ); # initialise with checkered colour and square
         self.x = j; self.y = i; # saving x and y coordinates
-        self.bind("<Enter>", lambda event: handleClick);
-        self.place(x=j * side);
+        self.bind("<Button>", lambda event: handleClick(self, event));
+        self.place(x=j * sqS);
 
 class Row(Frame):
-    def __init__(self, master, size, i):
-        super().__init__(master=master, width=size, height=floor(size / 8));
+    def __init__(self, master, i):
+        super().__init__(master=master, width=winS, height=sqS);
         for j in range(8):
-            newSquare = Square(self, size, i, j);
-        self.place(y=i * floor(size / 8));
+            newSquare = Square(self, i, j);
+        self.place(y=i * sqS);
 
 if __name__ == "__main__":
     # initialise
@@ -81,11 +96,10 @@ if __name__ == "__main__":
     # start the board
     board = Board();
     win.drawBoard(board);
-
+    
     # initiliase each square
-    colours = ["black", "white"];
     for i in range(8):
-        newRow = Row(win, win.size, i);
+        newRow = Row(win, i);
     
     win.mainloop();
     sys.exit(1); # Exits shellscript loop
