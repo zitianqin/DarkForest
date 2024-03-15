@@ -14,8 +14,9 @@ from math import *
 BUFF_PNG_FILE = "buff.png";
 
 winS = int(pag.size()[1] * 2 / 3);
-sqS = floor(winS / 8);
-transCol = "#abc123";
+ratS = 0.245;
+winClickRat = 1.23; # scaling up viewport to mouse click
+sqS = winS * winClickRat / 8;
 
 # picture displayed
 class Board(chess.Board):
@@ -25,8 +26,10 @@ class Board(chess.Board):
     def writeDisplayPng(self):
         cairosvg.svg2png(bytestring=chess.svg.board(self), write_to=BUFF_PNG_FILE);
 
-    def deleteDisplayPng(self):
-        os.remove(BUFF_PNG_FILE);
+# converts move sequence to SAN representation
+currM = ""; # stores current user move sequence
+def sanM(move):
+    return chess.Move.from_uci(move);
 
 # main window class
 class Window(Tk):
@@ -34,15 +37,19 @@ class Window(Tk):
         super().__init__();
         self.geometry(str(winS) + "x" + str(winS));
         self.resizable(False, False);
-        self.attributes("-transparentcolor", "white");
         
         # construct the label
         self.label = Label(self);
         self.label.pack();
+        self.label.bind("<Button>", lambda event: self.handleClick(event));
         
-    def drawBoard(self, board):
+        # construct abstract board
+        self.board = Board();
+        self.drawBoard();
+        
+    def drawBoard(self):
         # grabbing the display
-        board.writeDisplayPng();
+        self.board.writeDisplayPng();
         
         # convert and resizing to viewport
         boardPng = Image.open(BUFF_PNG_FILE);
@@ -51,55 +58,33 @@ class Window(Tk):
         # draw the image
         self.label.config(image=boardPng);
         self.label.image = boardPng;
-        board.deleteDisplayPng();
-
-# converts move sequence to SAN representation
-def sanM(move):
-    return chess.Move.from_uci(move);
-
-# handles the clicking of a piece
-currM = ""; # stores current user move sequence
-def handleClick(self, event):
-    global currM;
-    sqPos = chr(self.x + ord("a")) + str(8 - self.y);
-    currM += sqPos;
-    
-    # check if move was made
-    if len(currM) == 4:
-        if sanM(currM) in board.legal_moves:
-            print(currM);
-        currM = "";
-
-class Square(Frame):
-    def __init__(self, master, i, j ):
-        super().__init__(
-            master=master,
-            width=sqS,
-            height=sqS,
-            bg=transCol
-        ); # initialise with checkered colour and square
-        self.x = j; self.y = i; # saving x and y coordinates
-        self.bind("<Button>", lambda event: handleClick(self, event));
-        self.place(x=j * sqS);
-
-class Row(Frame):
-    def __init__(self, master, i):
-        super().__init__(master=master, width=winS, height=sqS);
-        for j in range(8):
-            newSquare = Square(self, i, j);
-        self.place(y=i * sqS);
+            
+    # handles the clicking of a piece
+    def handleClick(self, event):
+        global ratS, sqS, currM;
+        offset = sqS * ratS; # offset of black bars around board
+        sqMOff = sqS * (1 - ratS); # square side length without offset
+        pixX = event.x - offset; # calculate w/out the offset
+        pixY = event.y - offset;
+        indX = floor(pixX / sqMOff); # calculate the indices of square
+        indY = 8 - floor(pixY / sqMOff);
+        
+        # now we append to user move
+        sqPos = chr(indX + ord("a")) + str(indY);
+        currM += sqPos;
+        
+        # check if move was made
+        if len(currM) == 4:
+            sanCurrM = sanM(currM);
+            if sanCurrM in self.board.legal_moves:
+                self.board.push_san(str(sanCurrM));
+                self.drawBoard();
+            currM = "";
 
 if __name__ == "__main__":
     # initialise
     win = Window();
     
-    # start the board
-    board = Board();
-    win.drawBoard(board);
-    
-    # initiliase each square
-    for i in range(8):
-        newRow = Row(win, i);
-    
     win.mainloop();
+    os.remove(BUFF_PNG_FILE); # remove and fluffy files
     sys.exit(1); # Exits shellscript loop
