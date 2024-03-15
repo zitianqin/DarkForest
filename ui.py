@@ -71,6 +71,9 @@ class Window(Tk):
         
         # now we append to user move
         sqPos = chr(indX + ord("a")) + str(indY);
+        if sqPos == currM: # also check for null move
+            currM = ""
+            return;
         currM += sqPos;
         
         # check if move was made
