@@ -1,12 +1,9 @@
 import chess
 import chess.svg
 from tkinter import *
-import tksvg
 import pyautogui as pag
-import keyboard as kb
 import sys
 from PIL import Image, ImageTk
-from svglib.svglib import svg2rlg
 import cairosvg
 import os
 from math import *
