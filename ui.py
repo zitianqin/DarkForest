@@ -15,7 +15,18 @@ class Board(chess.Board):
         super().__init__();
     
     def writeDisplayPng(self):
-        cairosvg.svg2png(bytestring=chess.svg.board(self), write_to=BUFF_PNG_FILE);
+        # convert the square name to the index in chess library
+        selected = [];
+        if currM[:2] != "":
+            selected = [chess.SQUARES[chess.SQUARE_NAMES.index(currM[:2])]];
+        
+        cairosvg.svg2png(
+            bytestring=chess.svg.board(
+                self,
+                fill=dict.fromkeys(selected, "#88bb88"),
+            ),
+            write_to=BUFF_PNG_FILE
+        );
 
 # main window class
 class Window(Tk):
@@ -65,6 +76,7 @@ class Window(Tk):
         sqPos = chr(indX + ord("a")) + str(indY);
         if sqPos == currM: # also check for null move
             currM = "";
+            self.reloadBoard();
             return;
         currM += sqPos;
         
@@ -73,8 +85,8 @@ class Window(Tk):
             sanCurrM = sanM(currM);
             if sanCurrM in self.board.legal_moves:
                 self.board.push(sanCurrM);
-                self.reloadBoard();
             currM = "";
+        self.reloadBoard();
 
 if __name__ == "__main__":
     # initialise
