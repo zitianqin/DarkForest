@@ -7,6 +7,7 @@ import cairosvg
 import os
 from math import *
 from constants import *
+from helpers import *
 
 # picture displayed
 class Board(chess.Board):
@@ -15,10 +16,6 @@ class Board(chess.Board):
     
     def writeDisplayPng(self):
         cairosvg.svg2png(bytestring=chess.svg.board(self), write_to=BUFF_PNG_FILE);
-
-# converts move sequence to SAN representation
-def sanM(move):
-    return chess.Move.from_uci(move);
 
 # main window class
 class Window(Tk):
@@ -35,9 +32,9 @@ class Window(Tk):
         
         # construct abstract board
         self.board = Board();
-        self.drawBoard();
+        self.reloadBoard();
         
-    def drawBoard(self):
+    def reloadBoard(self):
         # grabbing the display
         self.board.writeDisplayPng();
         
@@ -60,14 +57,14 @@ class Window(Tk):
         indY = 8 - floor(pixY / sqMOff);
 
         # check for invalid moves
-        if (not (1 <= indX and indX <= 8)) or (not (1 <= indY and indY <= 8)):
+        if isOutOfBounds(indX) or isOutOfBounds(indY):
             currM = "";
             return;
         
         # now we append to user move
         sqPos = chr(indX + ord("a")) + str(indY);
         if sqPos == currM: # also check for null move
-            currM = ""
+            currM = "";
             return;
         currM += sqPos;
         
@@ -76,7 +73,7 @@ class Window(Tk):
             sanCurrM = sanM(currM);
             if sanCurrM in self.board.legal_moves:
                 self.board.push_san(str(sanCurrM));
-                self.drawBoard();
+                self.reloadBoard();
             currM = "";
 
 if __name__ == "__main__":
