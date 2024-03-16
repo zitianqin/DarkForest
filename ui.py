@@ -18,12 +18,12 @@ class Board(chess.Board):
         # convert the square name to the index in chess library
         selected = [];
         if currM[:2] != "":
-            selected = [chess.SQUARES[chess.SQUARE_NAMES.index(currM[:2])]];
+            selected = [chess.parse_square(currM[:2])];
         
         cairosvg.svg2png(
             bytestring=chess.svg.board(
                 self,
-                fill=dict.fromkeys(selected, "#88bb88"),
+                fill=dict.fromkeys(selected, "#99dd99"),
             ),
             write_to=BUFF_PNG_FILE
         );
