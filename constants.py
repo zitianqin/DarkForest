@@ -9,4 +9,6 @@ currM = ""; # stores current user move sequence
 
 # colours
 SELECT_COL = "#99dd99";
-CHECKMATE_COL = "#aa1111"
+ATTACKING_COL = "#aa4444";
+MOVING_COL = "#9999dd";
+CHECKMATE_COL = "#aa1111";

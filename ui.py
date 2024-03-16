@@ -15,11 +15,43 @@ class Board(chess.Board):
         super().__init__();
     
     def writeDisplayPng(self):
-        # convert the square name to the index in chess library
+        # square that is selected to move next
+        slctM = currM[:2];
+        slctSq = None if slctM == "" else chess.parse_square(slctM);
+        
+        # bulk of the colouring
         selected = [];
-        if currM[:2] != "":
-            selected.append(chess.parse_square(currM[:2]));
+        attacking = [];
+        moving = [];
+        if slctM != "":
+            # convert the square name to the index in chess library
+            selected.append(slctSq);
+            
+            # colour the attacking moves
+            for square in self.attacks(slctSq):
+                atkSq = self.piece_at(square);
+                currSq = self.piece_at(slctSq);
+                if self.piece_at(square) != None and not isOnSameTeam(atkSq, currSq):
+                    attacking.append(square);
+            
+            # colour the legal moves
+            for move in self.legal_moves:
+                # uci expression for the legal move
+                uciM = self.uci(move);
+                
+                # check if user selected move is in the legal move
+                if slctM in uciM:
+                    atkSq = self.piece_at(square);
+                    currSq = self.piece_at(slctSq);
+                    
+                    # check if atacking
+                    if self.piece_at(square) != None and not isOnSameTeam(atkSq, currSq):
+                        attacking.append(square);
+                    else:
+                        moving.append(chess.parse_square(uciM[2:4]));
         selectedMapping = dict.fromkeys(selected, SELECT_COL);
+        attackingMapping = dict.fromkeys(attacking, ATTACKING_COL);
+        movingMapping = dict.fromkeys(moving, MOVING_COL);
         
         # for any checkmates
         checkedKing = [];
@@ -33,7 +65,7 @@ class Board(chess.Board):
 
         # combine all mappings
         totalMapping = {};
-        for mapping in [selectedMapping, checkedKingMapping]:
+        for mapping in [selectedMapping, attackingMapping, movingMapping, checkedKingMapping]:
             for key in mapping:
                 totalMapping[key] = mapping[key];
         
