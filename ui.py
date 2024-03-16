@@ -18,13 +18,27 @@ class Board(chess.Board):
         # convert the square name to the index in chess library
         selected = [];
         if currM[:2] != "":
-            selected = [chess.parse_square(currM[:2])];
+            selected.append(chess.parse_square(currM[:2]));
+        selectedMapping = dict.fromkeys(selected, SELECT_COL);
+        
+        # for any checkmates
+        checkedKing = [];
+        if self.is_checkmate():
+            # find king that is checked
+            lostKing = "k" if self.outcome().winner else "K";
+            for square in chess.SQUARES:
+                if str(self.piece_at(square)) == lostKing:
+                    checkedKing.append(square);
+        checkedKingMapping = dict.fromkeys(checkedKing, CHECKMATE_COL);
+
+        # combine all mappings
+        totalMapping = {};
+        for mapping in [selectedMapping, checkedKingMapping]:
+            for key in mapping:
+                totalMapping[key] = mapping[key];
         
         cairosvg.svg2png(
-            bytestring=chess.svg.board(
-                self,
-                fill=dict.fromkeys(selected, "#99dd99"),
-            ),
+            bytestring=chess.svg.board(self, fill=totalMapping,),
             write_to=BUFF_PNG_FILE
         );
 
@@ -68,7 +82,7 @@ class Window(Tk):
         indY = 8 - floor(pixY / sqMOff);
 
         # check for invalid moves
-        if isOutOfBounds(indX) or isOutOfBounds(indY):
+        if isOutOfBounds(indX + 1) or isOutOfBounds(indY):
             currM = "";
             return;
         
@@ -82,7 +96,9 @@ class Window(Tk):
         
         # check if move was made
         if len(currM) == 4:
-            sanCurrM = sanM(currM);
+            sanCurrM = sanM(currM, self.board);
+            
+            # if legal we push
             if sanCurrM in self.board.legal_moves:
                 self.board.push(sanCurrM);
             currM = "";

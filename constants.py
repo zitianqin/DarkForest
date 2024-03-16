@@ -6,3 +6,7 @@ ratS = 0.245;
 winClickRat = 1.23; # scaling up viewport to mouse click
 sqS = winS * winClickRat / 8;
 currM = ""; # stores current user move sequence
+
+# colours
+SELECT_COL = "#99dd99";
+CHECKMATE_COL = "#aa1111"
