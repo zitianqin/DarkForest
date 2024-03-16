@@ -27,13 +27,6 @@ class Board(chess.Board):
             # convert the square name to the index in chess library
             selected.append(slctSq);
             
-            # colour the attacking moves
-            for square in self.attacks(slctSq):
-                atkSq = self.piece_at(square);
-                currSq = self.piece_at(slctSq);
-                if self.piece_at(square) != None and not isOnSameTeam(atkSq, currSq):
-                    attacking.append(square);
-            
             # colour the legal moves
             for move in self.legal_moves:
                 # uci expression for the legal move
@@ -41,14 +34,15 @@ class Board(chess.Board):
                 
                 # check if user selected move is in the legal move
                 if slctM in uciM:
-                    atkSq = self.piece_at(square);
-                    currSq = self.piece_at(slctSq);
+                    atkSq = chess.parse_square(uciM[2:4]);
+                    atkPc = self.piece_at(atkSq);
+                    currPc = self.piece_at(slctSq);
                     
                     # check if atacking
-                    if self.piece_at(square) != None and not isOnSameTeam(atkSq, currSq):
-                        attacking.append(square);
+                    if atkPc != None and not isOnSameTeam(atkPc, currPc):
+                        attacking.append(atkSq);
                     else:
-                        moving.append(chess.parse_square(uciM[2:4]));
+                        moving.append(atkSq);
         selectedMapping = dict.fromkeys(selected, SELECT_COL);
         attackingMapping = dict.fromkeys(attacking, ATTACKING_COL);
         movingMapping = dict.fromkeys(moving, MOVING_COL);
