@@ -50,7 +50,7 @@ class Window(Tk):
     def handleClick(self, event):
         global ratS, sqS, currM;
         offset = sqS * ratS; # offset of black bars around board
-        sqMOff = sqS * (1 - ratS); # square side length without offset
+        sqMOff = sqS - offset; # square side length without offset
         pixX = event.x - offset; # calculate w/out the offset
         pixY = event.y - offset;
         indX = floor(pixX / sqMOff); # calculate the indices of square
