@@ -1,19 +1,12 @@
 import chess
 import chess.svg
 from tkinter import *
-import pyautogui as pag
 import sys
 from PIL import Image, ImageTk
 import cairosvg
 import os
 from math import *
-
-BUFF_PNG_FILE = "buff.png";
-
-winS = int(pag.size()[1] * 2 / 3);
-ratS = 0.245;
-winClickRat = 1.23; # scaling up viewport to mouse click
-sqS = winS * winClickRat / 8;
+from constants import *
 
 # picture displayed
 class Board(chess.Board):
@@ -24,7 +17,6 @@ class Board(chess.Board):
         cairosvg.svg2png(bytestring=chess.svg.board(self), write_to=BUFF_PNG_FILE);
 
 # converts move sequence to SAN representation
-currM = ""; # stores current user move sequence
 def sanM(move):
     return chess.Move.from_uci(move);
 
@@ -32,6 +24,7 @@ def sanM(move):
 class Window(Tk):
     def __init__(self):
         super().__init__();
+        self.title("Cheese");
         self.geometry(str(winS) + "x" + str(winS));
         self.resizable(False, False);
         
@@ -65,6 +58,11 @@ class Window(Tk):
         pixY = event.y - offset;
         indX = floor(pixX / sqMOff); # calculate the indices of square
         indY = 8 - floor(pixY / sqMOff);
+
+        # check for invalid moves
+        if (not (1 <= indX and indX <= 8)) or (not (1 <= indY and indY <= 8)):
+            currM = "";
+            return;
         
         # now we append to user move
         sqPos = chr(indX + ord("a")) + str(indY);
