@@ -72,7 +72,7 @@ class Window(Tk):
         if len(currM) == 4:
             sanCurrM = sanM(currM);
             if sanCurrM in self.board.legal_moves:
-                self.board.push_san(str(sanCurrM));
+                self.board.push(sanCurrM);
                 self.reloadBoard();
             currM = "";
 
