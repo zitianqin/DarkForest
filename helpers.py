@@ -34,3 +34,9 @@ def isBlack(piece):
 # checks if two pieces are on the same team
 def isOnSameTeam(p1, p2):
     return (isWhite(p1) and isWhite(p2)) or (isBlack(p1) and isBlack(p2));
+
+# checks which colour is moving from the move stack
+def colourFromMove(board):
+    lastM = board.peek();
+    lastMovedSq = lastM.to_square;
+    return not board.color_at(lastMovedSq);

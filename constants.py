@@ -11,4 +11,6 @@ currM = ""; # stores current user move sequence
 SELECT_COL = "#99dd99";
 ATTACKING_COL = "#aa4444";
 MOVING_COL = "#9999dd";
+CHECK_COL = "#cc5555";
 CHECKMATE_COL = "#aa1111";
+STALEMATE_COL = "#333333";

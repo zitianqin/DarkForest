@@ -49,19 +49,37 @@ class Board(chess.Board):
         attackingMapping = dict.fromkeys(attacking, ATTACKING_COL);
         movingMapping = dict.fromkeys(moving, MOVING_COL);
         
-        # for any checkmates
+        # for any checks
         checkedKing = [];
+        if self.is_check():
+            # find king that is checked
+            checkedKing.append(self.king(colourFromMove(self)));
+        checkedKingMapping = dict.fromkeys(checkedKing, CHECK_COL);
+        
+        # for any checkmates
+        checkedMated = [];
         if self.is_checkmate():
             # find king that is checked
-            lostKing = "k" if self.outcome().winner else "K";
-            for square in chess.SQUARES:
-                if str(self.piece_at(square)) == lostKing:
-                    checkedKing.append(square);
-        checkedKingMapping = dict.fromkeys(checkedKing, CHECKMATE_COL);
+            checkedMated.append(self.king(colourFromMove(self)));
+        checkedMatedMapping = dict.fromkeys(checkedMated, CHECKMATE_COL);
 
+        # for a stalemate
+        staledMated = [];
+        if self.is_stalemate() or self.is_insufficient_material():
+            for square in chess.SQUARES:
+                if self.piece_type_at(square) == chess.KING:
+                    staledMated.append(square);
+        staledMated = dict.fromkeys(staledMated, STALEMATE_COL);
+                
         # combine all mappings
         totalMapping = {};
-        for mapping in [selectedMapping, attackingMapping, movingMapping, checkedKingMapping]:
+        for mapping in [
+            selectedMapping,
+            attackingMapping,
+            movingMapping,
+            checkedKingMapping,
+            checkedMatedMapping
+        ]:
             for key in mapping:
                 totalMapping[key] = mapping[key];
         
