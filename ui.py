@@ -23,18 +23,20 @@ class Board(chess.Board):
         selected = [];
         attacking = [];
         moving = [];
-        if slctM != "":
+
+        # checks for selected piece and that the square isn't empty
+        if slctM != "" and self.piece_at(slctSq) != None:
             # convert the square name to the index in chess library
             selected.append(slctSq);
             
             # colour the legal moves
             for move in self.legal_moves:
                 # uci expression for the legal move
-                uciM = self.uci(move);
+                uciLegM = self.uci(move);
                 
                 # check if user selected move is in the legal move
-                if slctM in uciM:
-                    atkSq = chess.parse_square(uciM[2:4]);
+                if slctM in uciLegM:
+                    atkSq = chess.parse_square(uciLegM[2:4]);
                     atkPc = self.piece_at(atkSq);
                     currPc = self.piece_at(slctSq);
                     
@@ -122,11 +124,11 @@ class Window(Tk):
         
         # check if move was made
         if len(currM) == 4:
-            sanCurrM = sanM(currM, self.board);
+            sanCurrM = uciM(currM, self.board);
             
             # if legal we push
             if sanCurrM in self.board.legal_moves:
-                self.board.push(sanCurrM);
+                self.board.push(sanCurrM);            
             currM = "";
         self.reloadBoard();
 

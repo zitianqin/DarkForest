@@ -1,7 +1,13 @@
 import chess
 
 # converts move sequence to SAN representation
-def sanM(move, board):
+def uciM(move, board):
+    # check for promotions
+    slctPc = board.piece_at(chess.parse_square(move[:2]));
+    # must be white in rank 7, black in rank 2, and pawn
+    if ((isWhite(slctPc) and move[1] == "7") or (isBlack(slctPc) and move[1] == "2")) and (slctPc.piece_type == chess.PAWN):
+        move += "q";
+    
     nextM = chess.Move.from_uci(move);
     return nextM;
     
