@@ -5,6 +5,7 @@ import sys
 from PIL import Image, ImageTk
 import cairosvg
 import os
+import pyautogui as pag
 from math import *
 from constants import *
 from helpers import *
@@ -56,11 +57,12 @@ class Window(Tk):
 		super().__init__();
 		self.title("Cheese");
 		self.geometry(str(winS) + "x" + str(winS));
+		# self.config(bg=WIN_BG_COL);
 		self.resizable(False, False);
 		
 		# construct the display label
 		self.label = Label(self);
-		self.label.pack();
+		self.label.pack(fill="both", expand=True);
 		self.label.bind("<Button>", lambda event: self.handleClick(event));
 		
 		# construct the move tracker
@@ -87,9 +89,11 @@ class Window(Tk):
 		global ratS, sqS;
 		cM = self.cM.get();
 		offset = sqS * ratS; # offset of black bars around board
+		winXOff = (self.winfo_width() - winS) / 2; # just in case the window gets resized
+		winYOff = (self.winfo_height() - winS) / 2;
 		sqMOff = sqS - offset; # square side length without offset
-		pixX = event.x - offset; # calculate w/out the offset
-		pixY = event.y - offset;
+		pixX = event.x - offset - winXOff; # calculate w/out the offset
+		pixY = event.y - offset - winYOff;
 		indX = floor(pixX / sqMOff); # calculate the indices of square
 		indY = 8 - floor(pixY / sqMOff);
 
@@ -122,5 +126,5 @@ if __name__ == "__main__":
 	win = Window();
 	win.mainloop();
 		
-	os.remove(BUFF_PNG_FILE); # remove and fluffy files
+	os.remove(BUFF_PNG_FILE); # remove any fluffy files
 	sys.exit(1); # Exits shellscript loop
