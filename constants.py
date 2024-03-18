@@ -9,7 +9,7 @@ winClickRat = 1.23; # scaling up viewport to mouse click
 sqS = winS * winClickRat / 8;
 
 # colours
-WIN_BG_COL = "#888880";
+WIN_BG_COL = "#000000";
 SELECT_COL = "#99dd99";
 ATTACKING_COL = "#aa4444";
 MOVING_COL = "#9999dd";
