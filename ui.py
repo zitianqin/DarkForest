@@ -5,7 +5,6 @@ import sys
 from PIL import Image, ImageTk
 import cairosvg
 import os
-import pyautogui as pag
 from math import *
 from constants import *
 from helpers import *
