@@ -54,7 +54,7 @@ class Board(chess.Board):
 class Window(Tk):
 	def __init__(self):
 		super().__init__();
-		self.title("Cheese");
+		self.title("DarkForest");
 		self.config(bg=WIN_BG_COL); # for some reason no work
 		self.resizable(False, False); # for some reason no work
 		self.geometry(str(winS) + "x" + str(winS));
