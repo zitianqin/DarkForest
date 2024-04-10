@@ -51,6 +51,13 @@ class Board(chess.Board):
 		drawing = svg2rlg(BytesIO(svgData));
 		renderPM.drawToFile(drawing, BUFF_PNG_FILE, fmt="PNG");
 
+	def changeBoardFromFen(self, win, fen):
+		# set the board to the FEN representation
+		self.set_board_fen(fen);
+
+		# redraw the board
+		win.reloadBoard();
+
 # main window class
 class Window(Tk):
 	def __init__(self):

@@ -111,4 +111,3 @@ def stalemateMap(board):
 		for king in [board.king(chess.WHITE), board.king(chess.BLACK)]:
 			staledMated.append(king);
 	return dict.fromkeys(staledMated, STALEMATE_COL);
-		
