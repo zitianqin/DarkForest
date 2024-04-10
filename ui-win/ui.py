@@ -22,6 +22,12 @@ class MoveTracker():
 	def set(self, newM):
 		self.value = newM;
 
+# special button
+class SpecBtn(Button):
+	def __init__(self, master, text):
+		super().__init__(master, text=text, width=BTN_WIDTH, height=BTN_HEIGHT);
+		self.pack(side="left");
+
 # picture displayed
 class Board(chess.Board):
 	def __init__(self):
@@ -57,8 +63,10 @@ class Board(chess.Board):
 		win.reloadBoard();
 
 	# when engine writes FEN to buff file, board changes to the FEN representation
-	def changeBoardFromFen(self, win, fen):
-		self.set_board_fen(fen);
+	def changeBoardFromFen(self, win):
+		with open(ENGINE_OUT_FILE, "r+") as out:
+			fen = out.readline();
+			self.set_fen(fen);
 		win.reloadBoard();
 
 # main window class
@@ -69,7 +77,7 @@ class Window(Tk):
 		self.config(bg=WIN_BG_COL); # for some reason no work
 		self.wm_attributes("-transparentcolor", WIN_BG_COL);
 		self.resizable(False, False); # for some reason no work
-		self.geometry(str(winS) + "x" + str(winS + BTN_HEIGHT * NUM_BTNS));
+		self.geometry(str(winS) + "x" + str(winS + BTN_HEIGHT));
 		
 		# construct the display label
 		self.label = Label(self, width=winS, height=winS);
@@ -82,26 +90,20 @@ class Window(Tk):
 		# construct abstract board
 		self.board = Board();
 		self.reloadBoard();
-  
+
 		# construct button frame
-		self.btns = Frame(self, width=winS, height=BTN_HEIGHT * NUM_BTNS);
+		self.btns = Frame(self, width=winS, height=BTN_HEIGHT);
 		self.btns.pack();
-		btns = self.btns;
-  
+
 		# construct board reset button
-		self.resetBoardBtn = Button(btns, text="Reset", width=BTN_WIDTH, height=BTN_HEIGHT);
+		self.resetBoardBtn = SpecBtn(self.btns, "Reset");
 		self.resetBoardBtn.bind("<Button>", lambda event: self.board.resetWrapper(self));
-		self.resetBoardBtn.pack();
 
 		# construct button that calls from engine's FEN output
-		self.getEngineFenBtn = Button(btns, text="Get Engine", width=BTN_WIDTH, height=BTN_HEIGHT);
+		self.getEngineFenBtn = SpecBtn(self.btns, "Get Engine");
 		self.getEngineFenBtn.bind("<Button>", lambda event:
-			self.board.changeBoardFromFen(self, "8/8/8/8/8/8/8/8"));
-		self.getEngineFenBtn.pack();
+			self.board.changeBoardFromFen(self));
 
-		self.fillerBtn = Button(btns, text="nice", width=BTN_WIDTH, height=BTN_HEIGHT);
-		self.fillerBtn.pack();
-		
 	def reloadBoard(self):
 		# grabbing the display
 		self.board.writeDisplayPng(self.cM);
@@ -120,7 +122,7 @@ class Window(Tk):
 		cM = self.cM.get();
 		offset = sqS * ratS; # offset of black bars around board
 		winXOff = (self.winfo_width() - winS) / 2; # just in case the window gets resized
-		winYOff = (self.winfo_height() - winS - BTN_HEIGHT * NUM_BTNS) / 2;
+		winYOff = (self.winfo_height() - winS - BTN_HEIGHT) / 2;
 		sqMOff = sqS - offset; # square side length without offset
 		pixX = event.x - offset - winXOff; # calculate w/out the offset
 		pixY = event.y - offset - winYOff;
@@ -155,6 +157,6 @@ if __name__ == "__main__":
 	# initialise
 	win = Window();
 	win.mainloop();
-		
+
 	os.remove(BUFF_PNG_FILE); # remove any fluffy files
 	sys.exit(1); # Exits shellscript loop
