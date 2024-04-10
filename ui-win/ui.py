@@ -51,11 +51,14 @@ class Board(chess.Board):
 		drawing = svg2rlg(BytesIO(svgData));
 		renderPM.drawToFile(drawing, BUFF_PNG_FILE, fmt="PNG");
 
-	def changeBoardFromFen(self, win, fen):
-		# set the board to the FEN representation
-		self.set_board_fen(fen);
+	# reset and redraw the board
+	def resetWrapper(self, win):
+		self.reset();
+		win.reloadBoard();
 
-		# redraw the board
+	# when engine writes FEN to buff file, board changes to the FEN representation
+	def changeBoardFromFen(self, win, fen):
+		self.set_board_fen(fen);
 		win.reloadBoard();
 
 # main window class
@@ -64,20 +67,40 @@ class Window(Tk):
 		super().__init__();
 		self.title("DarkForest");
 		self.config(bg=WIN_BG_COL); # for some reason no work
+		self.wm_attributes("-transparentcolor", WIN_BG_COL);
 		self.resizable(False, False); # for some reason no work
-		self.geometry(str(winS) + "x" + str(winS));
+		self.geometry(str(winS) + "x" + str(winS + BTN_HEIGHT * NUM_BTNS));
 		
 		# construct the display label
-		self.label = Label(self);
+		self.label = Label(self, width=winS, height=winS);
 		self.label.pack(fill="both", expand=True);
 		self.label.bind("<Button>", lambda event: self.handleClick(event));
 		
 		# construct the move tracker
 		self.cM = MoveTracker();
-		
+
 		# construct abstract board
 		self.board = Board();
 		self.reloadBoard();
+  
+		# construct button frame
+		self.btns = Frame(self, width=winS, height=BTN_HEIGHT * NUM_BTNS);
+		self.btns.pack();
+		btns = self.btns;
+  
+		# construct board reset button
+		self.resetBoardBtn = Button(btns, text="Reset", width=BTN_WIDTH, height=BTN_HEIGHT);
+		self.resetBoardBtn.bind("<Button>", lambda event: self.board.resetWrapper(self));
+		self.resetBoardBtn.pack();
+
+		# construct button that calls from engine's FEN output
+		self.getEngineFenBtn = Button(btns, text="Get Engine", width=BTN_WIDTH, height=BTN_HEIGHT);
+		self.getEngineFenBtn.bind("<Button>", lambda event:
+			self.board.changeBoardFromFen(self, "8/8/8/8/8/8/8/8"));
+		self.getEngineFenBtn.pack();
+
+		self.fillerBtn = Button(btns, text="nice", width=BTN_WIDTH, height=BTN_HEIGHT);
+		self.fillerBtn.pack();
 		
 	def reloadBoard(self):
 		# grabbing the display
@@ -97,7 +120,7 @@ class Window(Tk):
 		cM = self.cM.get();
 		offset = sqS * ratS; # offset of black bars around board
 		winXOff = (self.winfo_width() - winS) / 2; # just in case the window gets resized
-		winYOff = (self.winfo_height() - winS) / 2;
+		winYOff = (self.winfo_height() - winS - BTN_HEIGHT * NUM_BTNS) / 2;
 		sqMOff = sqS - offset; # square side length without offset
 		pixX = event.x - offset - winXOff; # calculate w/out the offset
 		pixY = event.y - offset - winYOff;
