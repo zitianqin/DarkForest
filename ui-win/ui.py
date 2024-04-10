@@ -1,15 +1,24 @@
-import chess
-import chess.svg
-from tkinter import *
 import sys
-from PIL import Image, ImageTk
 import os
 from math import *
 from constants import *
 from helpers import *
+
+# GUI
+import chess
+import chess.svg
+from tkinter import *
+
+# SVG <-> PNG images for display
+from PIL import Image, ImageTk
 from svglib.svglib import svg2rlg
 from reportlab.graphics import renderPM
 from io import BytesIO
+
+# interfacing with file watching
+import watchdog
+import watchdog.events
+import watchdog.observers
 
 # to track the current move
 class MoveTracker():
@@ -83,6 +92,41 @@ class Board(chess.Board):
 				print("Invalid engine move");
 		win.reloadBoard();
 
+# watches events on engine output files
+class EngineHandler(watchdog.events.LoggingEventHandler):
+    def __init__(self):
+        super().__init__();
+
+    # change the on_modified() method to log
+    def on_modified(self, event):
+        isFen = event.src_path == FEN_OUT_FILE;
+        path = FEN_OUT_FILE if isFen else MOVE_OUT_FILE;
+        line = "Engine FEN output" if isFen else "Engine move output";
+        with open(path, "r") as file:
+            global output;
+            output = file.readline();
+        if (output != ""): # read line modifies the file lol
+            line += ": " + output;
+            print(line);
+
+# watcher for engine output
+class Watcher(watchdog.observers.Observer):
+    def __init__(self):
+        super().__init__();
+        self.handler = EngineHandler();
+        self.schedule(self.handler, OUT_DIR);
+    
+    def startWatch(self):
+        print("nice"); return;
+        self.start();
+        while self.is_alive():
+            self.join(2);
+    
+    def stopWatch(self):
+        print("nice...."); return;
+        self.stop();
+        self.join();
+
 # main window class
 class Window(Tk):
 	def __init__(self):
@@ -101,6 +145,9 @@ class Window(Tk):
 		# construct the move tracker
 		self.cM = MoveTracker();
 
+		# construct watcher
+		self.watcher = Watcher();
+
 		# construct abstract board
 		self.board = Board();
 		self.reloadBoard();
@@ -114,10 +161,10 @@ class Window(Tk):
 		self.resetBoardBtn.bind("<Button>", lambda event: self.board.resetWrapper(self));
 
 		# construct buttons that calls from engine's FEN output
-		self.getEngineFenBtn = SpecBtn(self.btns, "Get FEN");
-		self.getEngineFenBtn.bind("<Button>", lambda event: self.board.loadEngineFen(self));
-		self.getEngineMoveBtn = SpecBtn(self.btns, "Get Move");
-		self.getEngineMoveBtn.bind("<Button>", lambda event: self.board.loadEngineMove(self));
+		self.engineBtn = SpecBtn(self.btns, "Start engine watch");
+		self.engineBtn.bind("<Button>", lambda event: self.watcher.startWatch());
+		self.stopEngineBtn = SpecBtn(self.btns, "Stop engine watch");
+		self.stopEngineBtn.bind("<Button>", lambda event: self.watcher.stopWatch());
 
 	def reloadBoard(self):
 		# grabbing the display
