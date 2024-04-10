@@ -23,7 +23,7 @@ def isWhite(piece):
 	if piece == None:
 		return False;
 	ch = ord(str(piece));
-		
+	
 	return ord("A") <= ch and ch <= ord("Z");
 
 # checks for black piece
@@ -50,6 +50,13 @@ def colourFromMove(board):
 	lastMovedSq = lastM.to_square;
 	return not board.color_at(lastMovedSq);
 
+# slight touch, lightens colour if the square is light
+def checkDarker(sq, col):
+    if (sq == None): return col;
+    isBlackSq = (int(sq / 8) + sq % 8) % 2 == 0; # add rank and file
+    lighterCol = "#" + hex(int(col[1:], 16) - 0x3f3f3f)[2:];
+    return lighterCol if isBlackSq else col;
+
 # colours the selected piece square
 def selectMap(board, cM):
 	slctM, slctSq = calcSelected(cM);
@@ -58,15 +65,15 @@ def selectMap(board, cM):
 	# checks for selected piece and that the square isn't empty
 	if slctM != "" and board.piece_at(slctSq) != None:
 		selected.append(slctSq);
-		
-	# print(dict.fromkeys(selected, SELECT_COL));
-	return dict.fromkeys(selected, SELECT_COL);
+
+	return dict.fromkeys(selected,
+        checkDarker(slctSq, SELECT_COL));
 
 # colours the attacking or moveable(legal) squares
 def attackMoveMap(board, cM):
 	slctM, slctSq = calcSelected(cM);
-	attacking = [];
-	moving = [];
+	attacking = {};
+	moving = {};
 		
 	# checks for selected piece and that the square isn't empty
 	if slctM != "" and board.piece_at(slctSq) != None:
@@ -82,10 +89,10 @@ def attackMoveMap(board, cM):
 				
 				# check if atacking
 				if atkPc != None and not isOnSameTeam(atkPc, currPc):
-					attacking.append(atkSq);
+					attacking[atkSq] = checkDarker(atkSq, ATTACKING_COL);
 				else:
-					moving.append(atkSq);
-	return dict.fromkeys(attacking, ATTACKING_COL), dict.fromkeys(moving, MOVING_COL);
+					moving[atkSq] = checkDarker(atkSq, MOVING_COL);
+	return attacking, moving;
 
 # colours the checks if any
 def checkMap(board):
