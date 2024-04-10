@@ -22,4 +22,4 @@ STALEMATE_COL = "#999999";
 # standard widget dimensions
 NUM_BTNS = 3;
 BTN_HEIGHT = 50;
-BTN_WIDTH = int(winS / (NUM_BTNS * 12));
+BTN_WIDTH = int(winS / NUM_BTNS);

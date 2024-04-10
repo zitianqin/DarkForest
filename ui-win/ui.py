@@ -25,7 +25,8 @@ class MoveTracker():
 # special button
 class SpecBtn(Button):
 	def __init__(self, master, text):
-		super().__init__(master, text=text, width=BTN_WIDTH, height=BTN_HEIGHT);
+		pixel = PhotoImage(width=1, height=1)
+		super().__init__(master, image=pixel, compound="c", text=text, width=BTN_WIDTH, height=BTN_HEIGHT);
 		self.pack(side="left");
 
 # picture displayed
