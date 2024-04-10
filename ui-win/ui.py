@@ -63,10 +63,23 @@ class Board(chess.Board):
 		win.reloadBoard();
 
 	# when engine writes FEN to buff file, board changes to the FEN representation
-	def changeBoardFromFen(self, win):
-		with open(ENGINE_OUT_FILE, "r+") as out:
-			fen = out.readline();
-			self.set_fen(fen);
+	def loadEngineFen(self, win):
+		with open(FEN_OUT_FILE, "r+") as out:
+			try:
+				fen = out.readline();
+				self.set_fen(fen);
+			except:
+				print("Invalid engine FEN state");
+		win.reloadBoard();
+ 
+	# when engine writes move to buff file, board pushes move
+	def loadEngineMove(self, win):
+		with open(MOVE_OUT_FILE, "r+") as out:
+			move = chess.Move.from_uci(out.readline());
+			if move in self.legal_moves:
+				self.push(move);
+			else:
+				print("Invalid engine move");
 		win.reloadBoard();
 
 # main window class
@@ -99,10 +112,11 @@ class Window(Tk):
 		self.resetBoardBtn = SpecBtn(self.btns, "Reset");
 		self.resetBoardBtn.bind("<Button>", lambda event: self.board.resetWrapper(self));
 
-		# construct button that calls from engine's FEN output
-		self.getEngineFenBtn = SpecBtn(self.btns, "Get Engine");
-		self.getEngineFenBtn.bind("<Button>", lambda event:
-			self.board.changeBoardFromFen(self));
+		# construct buttons that calls from engine's FEN output
+		self.getEngineFenBtn = SpecBtn(self.btns, "Get FEN");
+		self.getEngineFenBtn.bind("<Button>", lambda event: self.board.loadEngineFen(self));
+		self.getEngineMoveBtn = SpecBtn(self.btns, "Get Move");
+		self.getEngineMoveBtn.bind("<Button>", lambda event: self.board.loadEngineMove(self));
 
 	def reloadBoard(self):
 		# grabbing the display

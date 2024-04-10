@@ -1,7 +1,8 @@
 import pyautogui as pag
 
 BUFF_PNG_FILE = "buff.png";
-ENGINE_OUT_FILE = "../engineOut.txt";
+FEN_OUT_FILE = "../engineOut/fen.txt";
+MOVE_OUT_FILE = "../engineOut/move.txt";
 
 # graphics sizing
 winS = int(pag.size()[1] * 2 / 3);
@@ -19,6 +20,6 @@ CHECKMATE_COL = "#aa1111";
 STALEMATE_COL = "#999999";
 
 # standard widget dimensions
-NUM_BTNS = 2;
+NUM_BTNS = 3;
 BTN_HEIGHT = 50;
 BTN_WIDTH = int(winS / (NUM_BTNS * 12));
