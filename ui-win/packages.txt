@@ -1,0 +1,3 @@
+pip3 install chess
+pip3 install svglib
+pip3 install reportlab

@@ -1,0 +1,2 @@
+pip install chess
+pip install cairosvg
