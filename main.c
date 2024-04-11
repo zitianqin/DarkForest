@@ -3,6 +3,7 @@
 #include <string.h>
 #include <stdio.h>
 #include "bitboard_FEN.h"
+#include "legal_moves.h"
 
 int main() {
     uint64_t bitboards[NUM_BITBOARDS];
