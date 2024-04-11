@@ -254,8 +254,8 @@ class Window(Tk):
 			# if legal we push
 			if sanCurrM in self.board.legal_moves:
 				self.board.push(sanCurrM);
+				self.board.saveUiMove();
 			cM = "";
-			self.board.saveUiMove();
 		self.cM.set(cM);
 		self.reloadBoard();
 
