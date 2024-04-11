@@ -1,6 +1,10 @@
 import chess
 from math import *
 
+# watching
+from watchdog.observers import Observer
+from watchdog.events import FileSystemEvent, LoggingEventHandler
+
 values = {
     "p": 1,
     "k": 0,
@@ -62,9 +66,30 @@ def minimaxPrune(board, depth, alp, bet, player):
 
     return bestMove, bestEval;
 
+class EngineHandler(LoggingEventHandler):
+    def __init__(self):
+        super().__init__();
+        self.board = chess.Board();
+    
+    def on_modified(self, event):
+        move, eval = minimaxPrune(self.board, 4, -inf, inf, chess.WHITE);
+        with open("..\\engineOut\\move.txt", "w+") as file:
+            file.write(str(move));
+
 if __name__ == "__main__":
-    board = chess.Board();
-    state = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-    board.set_fen(state);
-    move, eval = minimaxPrune(board, 4, -inf, inf, chess.WHITE);
-    print(str(move));
+    # instance watchdog
+    watcher = Observer();
+    handler = LoggingEventHandler();
+
+    # schedule at uiOut directory
+    UI_OUT_DIR = "..\\uiOut";
+    watcher.schedule(handler, UI_OUT_DIR);
+    watcher.start();
+    
+    # begin watching
+    try:
+        while watcher.is_alive():
+            watcher.join(1);
+    except KeyboardInterrupt:
+        watcher.stop();
+        watcher.join();
