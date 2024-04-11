@@ -80,7 +80,6 @@ class EngineHandler(LoggingEventHandler):
         with open(UI_FEN_OUT, "r") as file:
             uiFen = file.readline();
             if uiFen == "": return;
-            print(uiFen);
             if uiFen != self.board.fen():
                 self.board.set_fen(uiFen);
         
@@ -93,7 +92,7 @@ class EngineHandler(LoggingEventHandler):
         
         # go next
         print("making move");
-        move, eval = minimaxPrune(self.board, 3, -inf, inf, chess.WHITE);
+        move, eval = minimaxPrune(self.board, 3, -inf, inf, self.board.turn);
         with open("..\\engineOut\\move.txt", "w+") as file:
             file.write(str(move));
         print("move made");
