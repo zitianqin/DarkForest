@@ -1,4 +1,3 @@
-import sys
 import os
 from math import *
 from constants import *
@@ -16,6 +15,7 @@ from reportlab.graphics import renderPM
 from io import BytesIO
 
 # interfacing with file watching
+from concurrent.futures import ThreadPoolExecutor
 import watchdog
 import watchdog.events
 import watchdog.observers
@@ -33,9 +33,9 @@ class MoveTracker():
 
 # special button
 class SpecBtn(Button):
-	def __init__(self, master, text):
-		pixel = PhotoImage(width=1, height=1)
-		super().__init__(master, image=pixel, compound="c", text=text, width=BTN_WIDTH, height=BTN_HEIGHT);
+	def __init__(self, master, text, command):
+		super().__init__(master, image=PhotoImage(), compound="center", text=text, width=BTN_WIDTH, height=BTN_HEIGHT);
+		self.bind("<Button>", command);
 		self.pack(side="left");
 
 # picture displayed
@@ -117,13 +117,11 @@ class Watcher(watchdog.observers.Observer):
         self.schedule(self.handler, OUT_DIR);
     
     def startWatch(self):
-        print("nice"); return;
         self.start();
         while self.is_alive():
-            self.join(2);
+            self.join(1); # every second we check for engine output
     
     def stopWatch(self):
-        print("nice...."); return;
         self.stop();
         self.join();
 
@@ -144,9 +142,10 @@ class Window(Tk):
 		
 		# construct the move tracker
 		self.cM = MoveTracker();
-
-		# construct watcher
+  
+		# construct watcher and threads
 		self.watcher = Watcher();
+		self.watcherTPool = ThreadPoolExecutor(max_workers=2);
 
 		# construct abstract board
 		self.board = Board();
@@ -157,14 +156,41 @@ class Window(Tk):
 		self.btns.pack();
 
 		# construct board reset button
-		self.resetBoardBtn = SpecBtn(self.btns, "Reset");
-		self.resetBoardBtn.bind("<Button>", lambda event: self.board.resetWrapper(self));
+		self.resetBoardBtn = SpecBtn(self.btns, "Reset", lambda event: self.board.resetWrapper(self));
 
-		# construct buttons that calls from engine's FEN output
-		self.engineBtn = SpecBtn(self.btns, "Start engine watch");
-		self.engineBtn.bind("<Button>", lambda event: self.watcher.startWatch());
-		self.stopEngineBtn = SpecBtn(self.btns, "Stop engine watch");
-		self.stopEngineBtn.bind("<Button>", lambda event: self.watcher.stopWatch());
+		# construct buttons that toggles calls from engine's FEN output
+		self.engineBtn = SpecBtn(self.btns, "Start engine watch", lambda event: self.toggleWatchWrap(self.engineBtn));
+
+	def toggleWatchWrap(self, btn):
+		# find what button we have toggled now
+		startText = "Start engine watch";
+		stopText = "Stop engine watch";
+		isStartInnerText = btn["text"] == startText;
+
+		# run the command and swap to the other
+		if isStartInnerText:
+			self.startWatchWrap();
+			btn.config(image=PhotoImage(), text=stopText);
+		else:
+			self.stopWatchWrap();
+			btn.config(image=PhotoImage(), text=startText);
+
+	def startWatchWrap(self):
+		watcher = self.watcher;
+		if watcher.is_alive():
+			print("already watching");
+		else:
+			print("starting watchdog");
+			self.watcherTPool.submit(watcher.startWatch);
+
+	def stopWatchWrap(self):
+		watcher = self.watcher;
+		if not watcher.is_alive():
+			print("already stopped");
+		else:
+			print("stopping watchdog");
+			self.watcherTPool.submit(watcher.stopWatch);
+			self.watcher = Watcher(); # instance a new watcher for next time
 
 	def reloadBoard(self):
 		# grabbing the display
@@ -216,9 +242,9 @@ class Window(Tk):
 		self.reloadBoard();
 
 if __name__ == "__main__":
-	# initialise
+	# initialise window
 	win = Window();
 	win.mainloop();
 
+	win.stopWatchWrap(); # make sure to stop watchdog 
 	os.remove(BUFF_PNG_FILE); # remove any fluffy files
-	sys.exit(1); # Exits shellscript loop
