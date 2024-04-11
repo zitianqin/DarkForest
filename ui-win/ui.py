@@ -73,47 +73,57 @@ class Board(chess.Board):
 		win.reloadBoard();
 
 	# when engine writes FEN to buff file, board changes to the FEN representation
-	def loadEngineFen(self, win):
-		with open(FEN_OUT_FILE, "r+") as out:
-			try:
-				fen = out.readline();
-				self.set_fen(fen);
-			except:
-				print("Invalid engine FEN state");
+	def loadEngineFen(self, win, fen):
+		try:
+			self.set_fen(fen);
+		except Exception as e:
+			print("Error: ", e);
 		win.reloadBoard();
  
 	# when engine writes move to buff file, board pushes move
-	def loadEngineMove(self, win):
-		with open(MOVE_OUT_FILE, "r+") as out:
-			move = chess.Move.from_uci(out.readline());
+	def loadEngineMove(self, win, moveStr):
+		try:
+			move = chess.Move.from_uci(moveStr); # convert output to move
 			if move in self.legal_moves:
 				self.push(move);
 			else:
 				print("Invalid engine move");
+		except Exception as e:
+			print("Error: ", e);
 		win.reloadBoard();
 
 # watches events on engine output files
 class EngineHandler(watchdog.events.LoggingEventHandler):
-    def __init__(self):
+    def __init__(self, win):
         super().__init__();
+        self.winRef = win;
 
     # change the on_modified() method to log
     def on_modified(self, event):
-        isFen = event.src_path == FEN_OUT_FILE;
-        path = FEN_OUT_FILE if isFen else MOVE_OUT_FILE;
-        line = "Engine FEN output" if isFen else "Engine move output";
+        # find which file was modified
+        isFenFile = event.src_path == FEN_OUT_FILE;
+        path = FEN_OUT_FILE if isFenFile else MOVE_OUT_FILE;
+
+		# open the file to read output
         with open(path, "r") as file:
             global output;
             output = file.readline();
-        if (output != ""): # read line modifies the file lol
-            line += ": " + output;
-            print(line);
+        
+        # reading files modifies them with output = ""
+        if (output == ""):
+            return;
+        
+        # do the engine output
+        if isFenFile:
+            self.winRef.board.loadEngineFen(self.winRef, output);
+        else:
+            self.winRef.board.loadEngineMove(self.winRef, output);
 
 # watcher for engine output
 class Watcher(watchdog.observers.Observer):
-    def __init__(self):
+    def __init__(self, win):
         super().__init__();
-        self.handler = EngineHandler();
+        self.handler = EngineHandler(win);
         self.schedule(self.handler, OUT_DIR);
     
     def startWatch(self):
@@ -144,7 +154,7 @@ class Window(Tk):
 		self.cM = MoveTracker();
   
 		# construct watcher and threads
-		self.watcher = Watcher();
+		self.watcher = Watcher(self);
 		self.watcherTPool = ThreadPoolExecutor(max_workers=2);
 
 		# construct abstract board
@@ -190,7 +200,7 @@ class Window(Tk):
 		else:
 			print("stopping watchdog");
 			self.watcherTPool.submit(watcher.stopWatch);
-			self.watcher = Watcher(); # instance a new watcher for next time
+			self.watcher = Watcher(self.board); # instance a new watcher for next time
 
 	def reloadBoard(self):
 		# grabbing the display
