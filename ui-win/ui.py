@@ -91,6 +91,13 @@ class Board(chess.Board):
 		except Exception as e:
 			print("Error: ", e);
 		win.reloadBoard();
+	
+	# after each move the FEN state and move will be uploaded to their files
+	def saveUiMove(self):
+		with open(UI_MOVE_OUT, "w+") as file:
+			file.write(str(self.peek()));
+		with open(UI_FEN_OUT, "w+") as file:
+			file.write(str(self.fen()));
 
 # watches events on engine output files
 class EngineHandler(watchdog.events.LoggingEventHandler):
@@ -101,8 +108,8 @@ class EngineHandler(watchdog.events.LoggingEventHandler):
     # change the on_modified() method to log
     def on_modified(self, event):
         # find which file was modified
-        isFenFile = event.src_path == FEN_OUT_FILE;
-        path = FEN_OUT_FILE if isFenFile else MOVE_OUT_FILE;
+        isFenFile = event.src_path == ENGINE_FEN_OUT;
+        path = ENGINE_FEN_OUT if isFenFile else ENGINE_MOVE_OUT;
 
 		# open the file to read output
         with open(path, "r") as file:
@@ -124,7 +131,7 @@ class Watcher(watchdog.observers.Observer):
     def __init__(self, win):
         super().__init__();
         self.handler = EngineHandler(win);
-        self.schedule(self.handler, OUT_DIR);
+        self.schedule(self.handler, ENGINE_OUT_DIR);
     
     def startWatch(self):
         self.start();
@@ -214,7 +221,7 @@ class Window(Tk):
 		self.label.config(image=boardPng);
 		self.label.image = boardPng;
 			
-	# handles the clicking of a piece
+	# handles the clicking of a piece, this is where moves are made
 	def handleClick(self, event):
 		global ratS, sqS;
 		cM = self.cM.get();
@@ -248,6 +255,7 @@ class Window(Tk):
 			if sanCurrM in self.board.legal_moves:
 				self.board.push(sanCurrM);
 			cM = "";
+			self.board.saveUiMove();
 		self.cM.set(cM);
 		self.reloadBoard();
 

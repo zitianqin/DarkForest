@@ -1,9 +1,13 @@
 import pyautogui as pag
 
+# file paths
 BUFF_PNG_FILE = "buff.png";
-OUT_DIR = "..\\engineOut";
-FEN_OUT_FILE = OUT_DIR + "\\fen.txt";
-MOVE_OUT_FILE = OUT_DIR + "\\move.txt";
+ENGINE_OUT_DIR = "..\\engineOut";
+ENGINE_FEN_OUT = ENGINE_OUT_DIR + "\\fen.txt";
+ENGINE_MOVE_OUT = ENGINE_OUT_DIR + "\\move.txt";
+UI_OUT_DIR = "..\\uiOut";
+UI_FEN_OUT = UI_OUT_DIR + "\\fen.txt";
+UI_MOVE_OUT = UI_OUT_DIR + "\\move.txt";
 
 # graphics sizing
 winS = int(pag.size()[1] * 2 / 3);

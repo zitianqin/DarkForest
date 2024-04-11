@@ -44,12 +44,6 @@ def calcSelected(cM):
 	slctSq = None if slctM == "" else chess.parse_square(slctM);
 	return slctM, slctSq;
 
-# checks which colour is moving from the move stack
-def colourFromMove(board):
-	lastM = board.peek();
-	lastMovedSq = lastM.to_square;
-	return not board.color_at(lastMovedSq);
-
 # slight touch, lightens colour if the square is light
 def checkDarker(sq, col):
     if (sq == None): return col;
@@ -99,7 +93,7 @@ def checkMap(board):
 	checkedKing = [];
 	if board.is_check():
 		# find king that is checked
-		checkedKing.append(board.king(colourFromMove(board)));
+		checkedKing.append(board.king(board.turn));
 	return dict.fromkeys(checkedKing, CHECK_COL);
 		
 # colours the checkmate if any
@@ -107,7 +101,7 @@ def checkmateMap(board):
 	checkedMated = [];
 	if board.is_checkmate():
 		# find king that is checked mated
-		checkedMated.append(board.king(colourFromMove(board)));
+		checkedMated.append(board.king(board.turn));
 	return dict.fromkeys(checkedMated, CHECKMATE_COL);
 
 # colours the stalemate if any
