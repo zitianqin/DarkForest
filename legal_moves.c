@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "legal_moves.h"
+#include "board.h"
 
 int directions[NUM_DIR] = {7, -7, 8, -8, 9, -9, 1, -1};
 
