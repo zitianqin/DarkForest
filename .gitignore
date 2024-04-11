@@ -1,7 +1,4 @@
-uiOut/*.txt
-
-engineOut/move.txt
-
+uiOut/
+engineOut/
 py_alg/__pycache__/
-
 ui-win/__pycache__/
