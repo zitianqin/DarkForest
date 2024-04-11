@@ -94,10 +94,17 @@ class Board(chess.Board):
 	
 	# after each move the FEN state and move will be uploaded to their files
 	def saveUiMove(self):
+		# temporarily record
+		moveMade = self.peek();
+		self.pop();
+		lastFenState = self.fen();
+		self.push(moveMade);
+
+		# write out
 		with open(UI_MOVE_OUT, "w+") as file:
-			file.write(str(self.peek()));
+			file.write(str(moveMade));
 		with open(UI_FEN_OUT, "w+") as file:
-			file.write(str(self.fen()));
+			file.write(str(lastFenState));
 
 # watches events on engine output files
 class EngineHandler(watchdog.events.LoggingEventHandler):

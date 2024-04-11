@@ -3,7 +3,11 @@ from math import *
 
 # watching
 from watchdog.observers import Observer
-from watchdog.events import FileSystemEvent, LoggingEventHandler
+from watchdog.events import LoggingEventHandler
+
+UI_OUT_DIR = "..\\uiOut";
+UI_FEN_OUT = UI_OUT_DIR + "\\fen.txt";
+UI_MOVE_OUT = UI_OUT_DIR + "\\move.txt";
 
 values = {
     "p": 1,
@@ -72,17 +76,34 @@ class EngineHandler(LoggingEventHandler):
         self.board = chess.Board();
     
     def on_modified(self, event):
-        move, eval = minimaxPrune(self.board, 4, -inf, inf, chess.WHITE);
+        # check that UI and engine have the same board state
+        with open(UI_FEN_OUT, "r") as file:
+            uiFen = file.readline();
+            if uiFen == "": return;
+            print(uiFen);
+            if uiFen != self.board.fen():
+                self.board.set_fen(uiFen);
+        
+        # push UI move
+        with open(UI_MOVE_OUT, "r") as file:
+            uiMove = file.readline();
+            parseMove = self.board.parse_uci(uiMove);
+            if uiMove == "" or not parseMove in self.board.legal_moves: return;
+            self.board.push(parseMove);
+        
+        # go next
+        print("making move");
+        move, eval = minimaxPrune(self.board, 3, -inf, inf, chess.WHITE);
         with open("..\\engineOut\\move.txt", "w+") as file:
             file.write(str(move));
+        print("move made");
 
 if __name__ == "__main__":
     # instance watchdog
     watcher = Observer();
-    handler = LoggingEventHandler();
+    handler = EngineHandler();
 
     # schedule at uiOut directory
-    UI_OUT_DIR = "..\\uiOut";
     watcher.schedule(handler, UI_OUT_DIR);
     watcher.start();
     
