@@ -23,14 +23,21 @@ def minimaxPrune(board, depth, alp, bet):
     for move in board.legal_moves:
         numPositions += 1;
         
-        # push and evaluate
+        # push
         board.push(move);
+        if hasRepeatedMoves(board): # generally don't want repetition
+            board.pop();
+            continue;
+        
+        # evaluate
         nextEval, nextMove = minimaxPrune(board, depth - 1, -bet, -alp); # we don't care about next moves which we can't make
+        nextEval += numCoverSquares(board, move.to_square);
         nextEval *= -1; # opponent's best move is bad for us
         board.pop();
         
         # pruning and check that we have a best move
-        if bestMove == None or alp <= nextEval: bestMove = move;
+        if bestMove == None or alp <= nextEval:
+            bestMove = move;
         alp = max(alp, nextEval);
         if (nextEval >= bet):
             return bet, bestMove;
