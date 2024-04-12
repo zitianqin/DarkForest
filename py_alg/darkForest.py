@@ -1,5 +1,6 @@
 import chess
 from math import *
+from helpers import *
 
 # watching
 from watchdog.observers import Observer
@@ -8,58 +9,30 @@ from watchdog.events import LoggingEventHandler
 UI_OUT_DIR = "..\\uiOut";
 UI_FEN_OUT = UI_OUT_DIR + "\\fen.txt";
 UI_MOVE_OUT = UI_OUT_DIR + "\\move.txt";
-STARTING_DEPTH = 3;
-
-values = {
-    "p": 1,
-    "k": 0,
-    "q": 10,
-    "b": 3,
-    "n": 3,
-    "r": 5,
-}
-
-def evaluate(board):
-    boardFen = str(board.board_fen());
-    
-    # white eval
-    whiteEval = 0;
-    for c in boardFen:
-        if ord("A") <= ord(c) and ord(c) <= ord("Z"):
-            lowerC = chr(ord(c) + ord("a") - ord("A"));
-            whiteEval += values[lowerC];
-    
-    # black eval
-    blackEval = 0;
-    for c in boardFen:
-        if ord("a") <= ord(c) and ord(c) <= ord("z"):
-            blackEval += values[c];
-    
-    return (whiteEval - blackEval) * (1 if board.turn == chess.WHITE else -1);
+STARTING_DEPTH = 4;
 
 # evaluates a position recursively and return best move with evaluation
 numPositions = 0;
 def minimaxPrune(board, depth, alp, bet):
     if (depth == 0):
-        return evaluate(board), None;
+        return multiplierEval(board, evalPcVal(board)), board.peek();
     
     # iterate
     global numPositions;
     bestMove = None;
     for move in board.legal_moves:
         numPositions += 1;
-        if (numPositions % 1000 == 0): print(numPositions);
         
         # push and evaluate
         board.push(move);
-        nextEval, nextMove = minimaxPrune(board, depth - 1, -bet, -alp);
+        nextEval, nextMove = minimaxPrune(board, depth - 1, -bet, -alp); # we don't care about next moves which we can't make
         nextEval *= -1; # opponent's best move is bad for us
         board.pop();
         
         # pruning and check that we have a best move
-        if bestMove == None or alp != nextEval: bestMove = move;
+        if bestMove == None or alp <= nextEval: bestMove = move;
         alp = max(alp, nextEval);
-        if (nextEval > bet):
+        if (nextEval >= bet):
             return bet, bestMove;
 
     return -alp, bestMove;
@@ -71,6 +44,8 @@ class EngineHandler(LoggingEventHandler):
         self.board = chess.Board();
     
     def on_modified(self, event):
+        if (event.src_path == UI_FEN_OUT): return;
+        
         # check that UI and engine have the same board state
         with open(UI_FEN_OUT, "r") as file:
             uiFen = file.readline();
@@ -115,7 +90,7 @@ if __name__ == "__main__":
     # begin watching
     try:
         while watcher.is_alive():
-            watcher.join(1);
+            watcher.join(0.5);
     except KeyboardInterrupt:
         watcher.stop();
         watcher.join();
