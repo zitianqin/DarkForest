@@ -1,6 +1,7 @@
 import chess
 from math import *
 from helpers import *
+from transTable import *
 
 # watching
 from watchdog.observers import Observer
@@ -15,7 +16,7 @@ STARTING_DEPTH = 4;
 numPositions = 0;
 def minimaxPrune(board, depth, alp, bet):
     if (depth == 0):
-        return evalPcVal(board), board.peek();
+        return evalPcVal(board) + transEval(board), board.peek();
     
     # iterate
     global numPositions;
@@ -94,6 +95,9 @@ if __name__ == "__main__":
     # schedule at uiOut directory
     watcher.schedule(handler, UI_OUT_DIR);
     watcher.start();
+
+    # transposition table initialise
+    initTables();
     
     # begin watching
     try:
