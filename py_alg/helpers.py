@@ -1,5 +1,7 @@
 import chess
 
+MULTIPLIER = 5;
+
 # evaluates a board from just the pieces on board
 values = {"p": 1, "k": 0, "q": 10, "b": 3, "n": 3, "r": 5};
 def evalPcVal(board):
@@ -15,7 +17,7 @@ def evalPcVal(board):
         if ord("a") <= ord(c) and ord(c) <= ord("z"):
             blackEval += values[c];
 
-    return (whiteEval - blackEval) * (1 if board.turn else -1);
+    return (whiteEval - blackEval) * (1 if board.turn else -1) * MULTIPLIER;
 
 # better way of evaluating pieces
 def getPcTypeVal(pcType):
@@ -26,7 +28,7 @@ def getPcTypeVal(pcType):
     if pcType == chess.KNIGHT: return values["k"];
     if pcType == chess.ROOK: return values["r"];
 
-# takes in captures, promotions and checkmates, to skew the evaluation
+# takes in captures, promotions to skew the evaluation
 def multiplierEval(board, eval):
     lastMove = board.pop(); # get last position
     
@@ -98,3 +100,34 @@ def numCoverSquares(board, sq):
             numCovers += 1;
     
     return numCovers;
+
+# adds value for centre control
+def centreCtrlVal(board, sq):
+    centreSquares = [chess.D4, chess.E4, chess.D5, chess.E5];
+    numAtking = 0;
+    isOnCentre = sq in centreSquares;
+    for square in centreSquares:
+        if sq in board.attackers(not board.turn, square):
+            numAtking += 1;
+
+    totalVal = (numAtking + (1 if isOnCentre else 0)) * MULTIPLIER;
+    return totalVal;
+
+def centreCtrlVal(board, sq):
+    centreSquares = [chess.D4, chess.E4, chess.D5, chess.E5];
+    numAtking = 0;
+    isOnCentre = sq in centreSquares;
+
+    for square in centreSquares:
+        if board.piece_at(square) is not None and board.piece_at(square).color != board.turn:
+            piece = board.piece_at(square)
+            if not (piece.piece_type == chess.KING or piece.piece_type == chess.ROOK):
+                numAtking += 5;
+
+    multiplier = 1;
+    if board.piece_at(sq).piece_type == chess.PAWN:
+        multiplier = 3;
+    elif board.piece_at(sq).piece_type in [chess.BISHOP, chess.KNIGHT, chess.QUEEN]:
+        multiplier = 2;
+
+    return (numAtking + (1 if isOnCentre else 0)) * multiplier;

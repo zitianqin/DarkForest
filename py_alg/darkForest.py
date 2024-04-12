@@ -15,7 +15,7 @@ STARTING_DEPTH = 4;
 numPositions = 0;
 def minimaxPrune(board, depth, alp, bet):
     if (depth == 0):
-        return multiplierEval(board, evalPcVal(board)), board.peek();
+        return evalPcVal(board), board.peek();
     
     # iterate
     global numPositions;
@@ -31,7 +31,8 @@ def minimaxPrune(board, depth, alp, bet):
         
         # evaluate
         nextEval, nextMove = minimaxPrune(board, depth - 1, -bet, -alp); # we don't care about next moves which we can't make
-        nextEval += numCoverSquares(board, move.to_square);
+        nextEval += numCoverSquares(board, move.to_square); # coverage
+        nextEval += centreCtrlVal(board, move.to_square); # centre control
         nextEval *= -1; # opponent's best move is bad for us
         board.pop();
         
