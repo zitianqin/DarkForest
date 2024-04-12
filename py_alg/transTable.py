@@ -226,4 +226,5 @@ def transEval(board):
     mgPhase = gamePhase;
     mgPhase = min(mgPhase, 24); # in case of early promotion
     egPhase = 24 - mgPhase;
-    return (mgScore * mgPhase + egScore * egPhase) / 24;
+    val = (mgScore * mgPhase + egScore * egPhase) / 24;
+    return val;

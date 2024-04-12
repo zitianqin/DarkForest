@@ -1,7 +1,5 @@
 import chess
 
-MULTIPLIER = 5;
-
 # evaluates a board from just the pieces on board
 values = {"p": 1, "k": 0, "q": 10, "b": 3, "n": 3, "r": 5};
 def evalPcVal(board):
@@ -17,7 +15,7 @@ def evalPcVal(board):
         if ord("a") <= ord(c) and ord(c) <= ord("z"):
             blackEval += values[c];
 
-    return (whiteEval - blackEval) * (1 if board.turn else -1) * MULTIPLIER;
+    return (whiteEval - blackEval) * (1 if board.turn else -1);
 
 # better way of evaluating pieces
 def getPcTypeVal(pcType):
@@ -75,15 +73,20 @@ def orderMovesByGuess(board):
     return orderedMoves;
 
 # checks if moves have been repeated
+repeats = 2;
+numM = repeats * 2 + 1;
 def hasRepeatedMoves(board):
-    if len(board.move_stack) < 5: return;
+    if len(board.move_stack) < numM: return;
     lastMoves = [];
-    for i in range(5):
+    currEval = evalPcVal(board);
+    for i in range(numM):
         lastMoves.append(board.pop());
-    for i in range(5):
-        board.push(lastMoves[4 - i]);
+    lastEval = evalPcVal(board);
+    for i in range(numM):
+        board.push(lastMoves[numM - 1 - i]);
     
-    return lastMoves[0] == lastMoves[4];
+    if currEval == lastEval and lastMoves[0] == lastMoves[numM - 1]: print(lastMoves[0], lastMoves[numM - 1]);
+    return lastMoves[0] == lastMoves[numM - 1];
 
 # gets the number of squares covered by a piece, multiplier for each move
 def numCoverSquares(board, sq):
@@ -110,7 +113,7 @@ def centreCtrlVal(board, sq):
         if sq in board.attackers(not board.turn, square):
             numAtking += 1;
 
-    totalVal = (numAtking + (1 if isOnCentre else 0)) * MULTIPLIER;
+    totalVal = (numAtking + (1 if isOnCentre else 0));
     return totalVal;
 
 def centreCtrlVal(board, sq):
