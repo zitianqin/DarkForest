@@ -19,7 +19,7 @@ values = {
     "r": 5,
 }
 
-def evaluate(board, player):
+def evaluate(board):
     boardFen = str(board.board_fen());
     
     # white eval
@@ -35,41 +35,34 @@ def evaluate(board, player):
         if ord("a") <= ord(c) and ord(c) <= ord("z"):
             blackEval += values[c];
     
-    return whiteEval - blackEval;
+    return (whiteEval - blackEval) * (1 if board.turn == chess.WHITE else -1);
 
 # evaluates a position recursively and return best move with evaluation
-def minimaxPrune(board, depth, alp, bet, player):
+numPositions = 0;
+def minimaxPrune(board, depth, alp, bet):
     if (depth == 0):
-        return None, evaluate(board, player);
-    
-    isWhite = player == chess.WHITE;
-    bestEval = -inf if isWhite else inf;
-    compareFunc = (max if isWhite else min);
-    bestMove = None;
+        return evaluate(board), None;
     
     # iterate
+    global numPositions;
+    bestMove = None;
     for move in board.legal_moves:
-        # check that we have a returning move
-        if bestMove == None: bestMove = move;
+        numPositions += 1;
+        if (numPositions % 1000 == 0): print(numPositions);
         
         # push and evaluate
         board.push(move);
-        nextMove, nextEval = minimaxPrune(board, depth - 1, alp, bet, not player);
+        nextEval, nextMove = minimaxPrune(board, depth - 1, -bet, -alp);
+        nextEval *= -1; # opponent's best move is bad for us
         board.pop();
-
-        # we've found a better move
-        if nextEval != bestEval: bestMove = move;
-        bestEval = compareFunc(bestEval, nextEval);
         
-        # pruning
-        if isWhite:
-            alp = compareFunc(alp, bestEval);
-            if alp > bestEval: break;
-        else:
-            bet = compareFunc(bet, bestEval);
-            if bet < bestEval: break;
+        # pruning and check that we have a best move
+        if bestMove == None or alp != nextEval: bestMove = move;
+        alp = max(alp, nextEval);
+        if (nextEval > bet):
+            return bet, bestMove;
 
-    return bestMove, bestEval;
+    return -alp, bestMove;
 
 lastUiMove = None; # make sure we're somehow not repeating moves
 class EngineHandler(LoggingEventHandler):
@@ -102,11 +95,13 @@ class EngineHandler(LoggingEventHandler):
                 print("Error:", e);
         
         # go next
-        move, eval = minimaxPrune(self.board, STARTING_DEPTH, -inf, inf, self.board.turn);
+        global numPositions;
+        numPositions = 0;
+        eval, move = minimaxPrune(self.board, STARTING_DEPTH, -inf, inf);
         if move == None: return;
         with open("..\\engineOut\\move.txt", "w+") as file:
             file.write(str(move));
-        print("Engine move made:", str(move));
+        print("Engine move made:", str(move), ", evaluated after ", numPositions, " positions");
 
 if __name__ == "__main__":
     # instance watchdog
