@@ -8,6 +8,7 @@ from watchdog.events import LoggingEventHandler
 UI_OUT_DIR = "..\\uiOut";
 UI_FEN_OUT = UI_OUT_DIR + "\\fen.txt";
 UI_MOVE_OUT = UI_OUT_DIR + "\\move.txt";
+STARTING_DEPTH = 3;
 
 values = {
     "p": 1,
@@ -70,6 +71,7 @@ def minimaxPrune(board, depth, alp, bet, player):
 
     return bestMove, bestEval;
 
+lastUiMove = None; # make sure we're somehow not repeating moves
 class EngineHandler(LoggingEventHandler):
     def __init__(self):
         super().__init__();
@@ -86,16 +88,25 @@ class EngineHandler(LoggingEventHandler):
         # push UI move
         with open(UI_MOVE_OUT, "r") as file:
             uiMove = file.readline();
-            parseMove = self.board.parse_uci(uiMove);
-            if uiMove == "" or not parseMove in self.board.legal_moves: return;
-            self.board.push(parseMove);
+            global lastUiMove;
+            if uiMove == "" or lastUiMove == uiMove:
+                return;
+            else:
+                lastUiMove = uiMove;
+            
+            try:
+                parseMove = self.board.parse_uci(uiMove);
+                self.board.push(parseMove);
+                print("Move made by UI:", uiMove);
+            except Exception as e:
+                print("Error:", e);
         
         # go next
-        print("making move");
-        move, eval = minimaxPrune(self.board, 3, -inf, inf, self.board.turn);
+        move, eval = minimaxPrune(self.board, STARTING_DEPTH, -inf, inf, self.board.turn);
+        if move == None: return;
         with open("..\\engineOut\\move.txt", "w+") as file:
             file.write(str(move));
-        print("move made");
+        print("Engine move made:", str(move));
 
 if __name__ == "__main__":
     # instance watchdog

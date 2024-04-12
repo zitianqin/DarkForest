@@ -86,12 +86,13 @@ class Board(chess.Board):
 			move = chess.Move.from_uci(moveStr); # convert output to move
 			if move in self.legal_moves:
 				self.push(move);
+				print("Move made by engine:", moveStr);
 			else:
-				print("Invalid engine move");
+				print("Invalid engine move: ", moveStr);
+				win.reloadBoard();
 		except Exception as e:
 			print("Error: ", e);
-		win.reloadBoard();
-	
+   
 	# after each move the FEN state and move will be uploaded to their files
 	def saveUiMove(self):
 		# temporarily record
@@ -107,13 +108,14 @@ class Board(chess.Board):
 			file.write(str(lastFenState));
 
 # watches events on engine output files
+lastEngineMove = None; # make sure we're not repeating moves
 class EngineHandler(watchdog.events.LoggingEventHandler):
     def __init__(self, win):
         super().__init__();
         self.winRef = win;
 
     # change the on_modified() method to log
-    def on_modified(self, event):
+    def on_modified(self, event):        
         # find which file was modified
         isFenFile = event.src_path == ENGINE_FEN_OUT;
         path = ENGINE_FEN_OUT if isFenFile else ENGINE_MOVE_OUT;
@@ -124,8 +126,12 @@ class EngineHandler(watchdog.events.LoggingEventHandler):
             output = file.readline();
         
         # reading files modifies them with output = ""
-        if (output == ""):
+        global lastEngineMove;
+        if output == "" or lastEngineMove == output:
+            self.winRef.reloadBoard();
             return;
+        else:
+            lastEngineMove = output;
         
         # do the engine output
         if isFenFile:
@@ -255,16 +261,19 @@ class Window(Tk):
 		cM += sqPos;
 		
 		# check if move was made
+		moveWasMade = False; # for UI delay
 		if len(cM) == 4:
 			sanCurrM = uciM(cM, self.board);
 			
 			# if legal we push
 			if sanCurrM in self.board.legal_moves:
 				self.board.push(sanCurrM);
-				self.board.saveUiMove();
+				moveWasMade = True;
+				print("UI move made:", sanCurrM);
 			cM = "";
 		self.cM.set(cM);
 		self.reloadBoard();
+		if moveWasMade: self.board.saveUiMove();
 
 if __name__ == "__main__":
 	# initialise window
