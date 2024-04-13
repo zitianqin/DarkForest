@@ -11,7 +11,7 @@ from watchdog.events import LoggingEventHandler
 UI_OUT_DIR = "..\\uiOut";
 UI_FEN_OUT = UI_OUT_DIR + "\\fen.txt";
 UI_MOVE_OUT = UI_OUT_DIR + "\\move.txt";
-STARTING_DEPTH = 3;
+STARTING_DEPTH = 4;
 
 # evaluates a position recursively and return best move with evaluation
 numPositions = 0;
@@ -25,13 +25,19 @@ def minimaxPrune(board, depth, alp, bet):
     orderedLegMoves = orderMovesByGuess(board);
     for move in orderedLegMoves:
         # not a very hard decision, my guy and also think less if there's less moves to make
-        numLegM = numLegalMoves(board);
-        if numLegM == 1: return allEval(board);
-        depth = int(ceil(depth * (1 - (1/numLegM))));
+        if numLegalMoves(board) == 1: return allEval(board);
         numPositions += 1;
-        
-        # push and evaluate
+
+        # push
         board.push(move);
+
+        # if we already find a checkmate
+        if board.is_checkmate() and depth == STARTING_DEPTH:
+            board.pop();
+            bestMove = move;
+            return inf;
+
+        # evaluate
         nextEval = -round(minimaxPrune(board, depth - 1, -bet, -alp), 4);
         
         # pruning 
@@ -39,13 +45,6 @@ def minimaxPrune(board, depth, alp, bet):
             # check that we have a best move
             if depth == STARTING_DEPTH or bestMove == None:
                 bestMove = move;
-            # v0 = evalPcVal(board);
-            # v1 = evalOwnCheck(board);
-            # v2 = captureEval(board);
-            # v3 = numCoverSquares(board, move.to_square);
-            # v4 = centreCtrlVal(board, move.to_square);
-            # v5 = transEval(board) / 100;
-            # print(f"new best move {move} //// {v0}, {v1}, {v2}, {v3}, {v4}, {v5}, {v0+v1+v2+v3+v4+v5}");
             alp = nextEval;
         board.pop();
 
@@ -67,6 +66,7 @@ class EngineHandler(LoggingEventHandler):
             uiFen = file.readline();
             if uiFen == "": return;
             if uiFen != self.board.fen():
+                print("Updating!");
                 self.board.set_fen(uiFen);
         
         # push UI move

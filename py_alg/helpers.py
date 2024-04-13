@@ -17,7 +17,8 @@ def evalOwnCheck(board):
         return -inf;
     
     # checks
-    if board.is_check(): return len(board.checkers());
+    if board.is_check():
+        return -len(board.checkers());
     return 0;
 
 # evaluates a board from just the pieces on board
@@ -173,6 +174,7 @@ def mergeSort(arr, lo, hi):
 
 # evaluate first and orders the board's list of legal moves to shorten the search
 def orderMovesByGuess(board):
+    return board.legal_moves;
     orderedMoves = {};
     legalMoves= board.legal_moves;
     for move in legalMoves:
