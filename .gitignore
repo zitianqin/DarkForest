@@ -1,6 +1,6 @@
 uiOut/
 engineOut/
-py_alg/__pycache__/
-ui-win/__pycache__/*.pyc
+ui-win/py_alg/__pycache__/
+ui-win/__pycache__/
 *.exe
 ui-win/buff.png
