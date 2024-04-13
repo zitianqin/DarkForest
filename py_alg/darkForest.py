@@ -15,36 +15,37 @@ STARTING_DEPTH = 4;
 
 # evaluates a position recursively and return best move with evaluation
 numPositions = 0;
+bestMove = None;
 def minimaxPrune(board, depth, alp, bet):
     if (depth == 0):
-        return allEval(board), board.peek();
+        return allEval(board);
     
     # iterate
-    global numPositions;
-    bestMove = None;
-    for move in board.legal_moves:
+    global numPositions, bestMove;
+    orderedLegMoves = orderMovesByGuess(board);
+    for move in orderedLegMoves:
         # not a very hard decision, my guy and also think less if there's less moves to make
         numLegM = numLegalMoves(board);
         if numLegM == 1: return allEval(board), move;
-        depth = depth * (int(ceil(1 - (1/numLegM))));
+        depth = int(ceil(depth * (1 - (1/numLegM))));
 
         numPositions += 1;
         
         # push and evaluate
         board.push(move);
-        nextEval, nextMove = minimaxPrune(board, depth - 1, -bet, -alp); # we don't care about next moves which we can't make
+        nextEval = minimaxPrune(board, depth - 1, -bet, -alp); # we don't care about next moves which we can't make
+        nextEval = int(nextEval);
         nextEval *= -1; # opponent's best move is bad for us
         board.pop();
         
         # pruning and check that we have a best move
-        if bestMove == None or alp <= nextEval:
-            print(nextEval);
-            bestMove = move;
+        if alp <= nextEval:
+            if depth == STARTING_DEPTH or bestMove == None: bestMove = move;
         alp = max(alp, nextEval);
         if (nextEval >= bet):
-            return bet, bestMove;
+            return bet;
 
-    return -alp, bestMove;
+    return -alp;
 
 lastUiMove = None; # make sure we're somehow not repeating moves
 class EngineHandler(LoggingEventHandler):
@@ -79,13 +80,13 @@ class EngineHandler(LoggingEventHandler):
                 print("Error:", e);
         
         # go next
-        global numPositions;
+        global numPositions, bestMove;
         numPositions = 0;
-        eval, move = minimaxPrune(self.board, STARTING_DEPTH, -inf, inf);
-        if move == None: return;
+        eval = minimaxPrune(self.board, STARTING_DEPTH, -inf, inf);
+        if bestMove == None: return;
         with open("..\\engineOut\\move.txt", "w+") as file:
-            file.write(str(move));
-        print(f"Engine move made: {str(move)}, {eval}, evaluated after {numPositions} positions");
+            file.write(str(bestMove));
+        print(f"Engine move made: {str(bestMove)}, {eval} evaluated after {numPositions} positions");
 
 if __name__ == "__main__":
     # instance watchdog

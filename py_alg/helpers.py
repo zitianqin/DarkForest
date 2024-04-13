@@ -79,19 +79,6 @@ def captureEval(board):
     
     return 0;
 
-# orders the board's list of legal moves to skew the search
-def orderMovesByGuess(board):
-    orderedMoves = [];
-    legalMoves= board.legal_moves;
-    for move in legalMoves:
-        orderedMoves.append(move);
-        
-        # captue skew
-        
-        # promotion skew
-    
-    return orderedMoves;
-
 # gets the number of squares covered by a piece, multiplier for each move
 def numCoverSquares(board, sq):
     pc = board.piece_at(sq);
@@ -120,12 +107,6 @@ def centreCtrlVal(board, sq):
             if not (piece.piece_type == chess.KING or piece.piece_type == chess.ROOK):
                 numAtking += 1;
 
-    # multiplier = 1;
-    # if board.piece_at(sq).piece_type == chess.PAWN:
-    #     multiplier = 3;
-    # elif board.piece_at(sq).piece_type in [chess.BISHOP, chess.KNIGHT, chess.QUEEN]:
-    #     multiplier = 2;
-
     return (numAtking + (1 if isOnCentre else 0));
 
 # combines all evaluations
@@ -142,7 +123,56 @@ def allEval(board):
     ev2 = captureEval(board);
     ev3 = numCoverSquares(board, lastMoveToSq);
     ev4 = centreCtrlVal(board, lastMoveToSq);
-    ev5 = transEval(board) / 200;
-    totalEval = (1 if board.turn else -1) * (ev1 + ev2 + ev3 + ev4 + ev5);
-    # print(ev1, ev2, ev3, ev4, ev5, totalEval);
+    ev5 = transEval(board) / 100;
+    totalEval = (1 if board.turn == chess.WHITE else -1) * (ev1 + ev2 + ev3 + ev4 + ev5);
     return totalEval;
+
+# merge sort for move: eval dictionary
+def merge(arr, lo, mid, hi):
+    leftLen = mid - lo + 1;
+    rightLen = hi - mid - 1;
+    
+    # copy arr
+    left = arr[slice(lo, lo + leftLen)];
+    right = arr[slice(mid + 1, mid + 1 + rightLen)];
+    i = j = 0; k = lo;
+    
+    # merging time
+    while i < leftLen and j < rightLen:
+        try:
+            if left[i][1] >= right[j][1]:
+                arr[k] = left[i];
+                i += 1;
+            else:
+                arr[k] = right[j];
+                j += 1;
+            k += 1;
+    
+    # copy the rest
+    while i < leftLen:
+        arr[k] = left[i];
+        i += 1;
+        k += 1;
+    while j < rightLen:
+        arr[k] = right[j];
+        j += 1;
+        k += 1;
+def mergeSort(arr, lo, hi):
+    if lo < hi:
+        mid = int(floor((lo + hi)/2));
+        mergeSort(arr, lo, mid);
+        mergeSort(arr, mid + 1, hi);
+        merge(arr, lo, mid, hi);
+
+# evaluate first and orders the board's list of legal moves to shorten the search
+def orderMovesByGuess(board):
+    orderedMoves = {};
+    legalMoves= board.legal_moves;
+    for move in legalMoves:
+        board.push(move);
+        orderedMoves[move] = allEval(board);
+        board.pop();
+    
+    # merge sort
+    mergeSort(list(orderedMoves.items()), 0, numLegalMoves(board));
+    return list(orderedMoves.keys());
