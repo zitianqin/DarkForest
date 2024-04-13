@@ -26,15 +26,14 @@ def minimaxPrune(board, depth, alp, bet):
     for move in orderedLegMoves:
         # not a very hard decision, my guy and also think less if there's less moves to make
         numLegM = numLegalMoves(board);
-        if numLegM == 1: return allEval(board), move;
+        if numLegM == 1: return allEval(board);
         depth = int(ceil(depth * (1 - (1/numLegM))));
-
         numPositions += 1;
         
         # push and evaluate
         board.push(move);
         nextEval = minimaxPrune(board, depth - 1, -bet, -alp); # we don't care about next moves which we can't make
-        nextEval = int(nextEval);
+        nextEval = round(nextEval, 2);
         nextEval *= -1; # opponent's best move is bad for us
         board.pop();
         
