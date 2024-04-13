@@ -111,6 +111,10 @@ def centreCtrlVal(board, sq):
 
     return (numAtking + (2 if isOnCentre else 0));
 
+# calculates bad trades for the current state (before any move pushes)
+def badTradeEval(board):
+    return 0;
+
 # combines all evaluations
 tablesInited = False;
 def allEval(board):
@@ -127,7 +131,8 @@ def allEval(board):
     v3 = numCoverSquares(board, lastMoveToSq);
     v4 = centreCtrlVal(board, lastMoveToSq);
     v5 = transEval(board) / 100;
-    totalEval = v0 + v1 + v2 + v3 + v4 + v5;
+    v6 = badTradeEval(board);
+    totalEval = v0 + v1 + v2 + v3 + v4 + v5 + v6;
     return totalEval;
 
 # merge sort for move: eval dictionary
