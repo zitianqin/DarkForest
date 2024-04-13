@@ -14,11 +14,8 @@ from svglib.svglib import svg2rlg
 from reportlab.graphics import renderPM
 from io import BytesIO
 
-# interfacing with file watching
-from concurrent.futures import ThreadPoolExecutor
-import watchdog
-import watchdog.events
-import watchdog.observers
+# engine interfacing
+from py_alg.darkForest import *
 
 # to track the current move
 class MoveTracker():
@@ -92,68 +89,6 @@ class Board(chess.Board):
 				win.reloadBoard();
 		except Exception as e:
 			print("Error: ", e);
-   
-	# after each move the FEN state and move will be uploaded to their files
-	def saveUiMove(self):
-		# temporarily record
-		moveMade = self.peek();
-		self.pop();
-		lastFenState = self.fen();
-		self.push(moveMade);
-
-		# write out
-		with open(UI_MOVE_OUT, "w+") as file:
-			file.write(str(moveMade));
-		with open(UI_FEN_OUT, "w+") as file:
-			file.write(str(lastFenState));
-
-# watches events on engine output files
-lastEngineMove = None; # make sure we're not repeating moves
-class EngineHandler(watchdog.events.LoggingEventHandler):
-    def __init__(self, win):
-        super().__init__();
-        self.winRef = win;
-
-    # change the on_modified() method to log
-    def on_modified(self, event):        
-        # find which file was modified
-        isFenFile = event.src_path == ENGINE_FEN_OUT;
-        path = ENGINE_FEN_OUT if isFenFile else ENGINE_MOVE_OUT;
-
-		# open the file to read output
-        with open(path, "r") as file:
-            global output;
-            output = file.readline();
-        
-        # reading files modifies them with output = ""
-        global lastEngineMove;
-        if output == "" or lastEngineMove == output:
-            self.winRef.reloadBoard();
-            return;
-        else:
-            lastEngineMove = output;
-        
-        # do the engine output
-        if isFenFile:
-            self.winRef.board.loadEngineFen(self.winRef, output);
-        else:
-            self.winRef.board.loadEngineMove(self.winRef, output);
-
-# watcher for engine output
-class Watcher(watchdog.observers.Observer):
-    def __init__(self, win):
-        super().__init__();
-        self.handler = EngineHandler(win);
-        self.schedule(self.handler, ENGINE_OUT_DIR);
-    
-    def startWatch(self):
-        self.start();
-        while self.is_alive():
-            self.join(1); # every second we check for engine output
-    
-    def stopWatch(self):
-        self.stop();
-        self.join();
 
 # main window class
 class Window(Tk):
@@ -172,10 +107,6 @@ class Window(Tk):
 		
 		# construct the move tracker
 		self.cM = MoveTracker();
-  
-		# construct watcher and threads
-		self.watcher = Watcher(self);
-		self.watcherTPool = ThreadPoolExecutor(max_workers=2);
 
 		# construct abstract board
 		self.board = Board();
@@ -189,38 +120,19 @@ class Window(Tk):
 		self.resetBoardBtn = SpecBtn(self.btns, "Reset", lambda event: self.board.resetWrapper(self));
 
 		# construct buttons that toggles calls from engine's FEN output
-		self.engineBtn = SpecBtn(self.btns, "Start engine watch", lambda event: self.toggleWatchWrap(self.engineBtn));
+		self.engineBtn = SpecBtn(self.btns, "Start engine", lambda event: self.toggleEngine(self.engineBtn));
+		self.engineOn = False;
 
-	def toggleWatchWrap(self, btn):
+	def toggleEngine(self, btn):
 		# find what button we have toggled now
-		startText = "Start engine watch";
-		stopText = "Stop engine watch";
+		startText = "Start engine";
+		stopText = "Stop engine";
 		isStartInnerText = btn["text"] == startText;
 
-		# run the command and swap to the other
-		if isStartInnerText:
-			self.startWatchWrap();
-			btn.config(image=PhotoImage(), text=stopText);
-		else:
-			self.stopWatchWrap();
-			btn.config(image=PhotoImage(), text=startText);
-
-	def startWatchWrap(self):
-		watcher = self.watcher;
-		if watcher.is_alive():
-			print("already watching");
-		else:
-			print("starting watchdog");
-			self.watcherTPool.submit(watcher.startWatch);
-
-	def stopWatchWrap(self):
-		watcher = self.watcher;
-		if not watcher.is_alive():
-			print("already stopped");
-		else:
-			print("stopping watchdog");
-			self.watcherTPool.submit(watcher.stopWatch);
-			self.watcher = Watcher(self.board); # instance a new watcher for next time
+		# ENGINE IS ROARING!!!!
+		btn.config(image=PhotoImage(), text=(stopText if isStartInnerText else startText));
+		print(f"Engine {"stopping" if isStartInnerText else "starting"}");
+		self.engineOn = not self.engineOn;
 
 	def reloadBoard(self):
 		# grabbing the display
@@ -273,7 +185,12 @@ class Window(Tk):
 			cM = "";
 		self.cM.set(cM);
 		self.reloadBoard();
-		if moveWasMade: self.board.saveUiMove();
+
+		# make engine move
+		if moveWasMade and self.engineOn:
+			move = callEngine(self.board);
+			self.board.push(move);
+			self.reloadBoard();
 
 if __name__ == "__main__":
 	# initialise window
@@ -281,5 +198,4 @@ if __name__ == "__main__":
     win = Window();
     win.mainloop();
     
-    win.stopWatchWrap(); # make sure to stop watchdog 
     os.remove(BUFF_PNG_FILE); # remove any fluffy files
