@@ -25,7 +25,10 @@ def minimaxPrune(board, depth, alp, bet):
     orderedLegMoves = orderMovesByGuess(board);
     for move in orderedLegMoves:
         # not a very hard decision, my guy and also think less if there's less moves to make
-        if numLegalMoves(board) == 1: return allEval(board);
+        if numLegalMoves(board) == 1:
+            if depth == STARTING_DEPTH:
+                bestMove = move;
+            return allEval(board);
         numPositions += 1;
 
         # push
@@ -89,7 +92,7 @@ class EngineHandler(LoggingEventHandler):
         global numPositions, bestMove;
         numPositions = 0;
         eval = minimaxPrune(self.board, STARTING_DEPTH, -inf, inf);
-        if bestMove == None: return;
+        print(bestMove in self.board.legal_moves);
         with open("..\\engineOut\\move.txt", "w+") as file:
             file.write(str(bestMove));
         print(f"Engine move made: {str(bestMove)}, {eval} evaluated after {numPositions} positions");
