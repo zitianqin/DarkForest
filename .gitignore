@@ -3,3 +3,4 @@ engineOut/
 py_alg/__pycache__/
 ui-win/__pycache__/*.pyc
 *.exe
+ui-win/buff.png
