@@ -16,6 +16,7 @@ from io import BytesIO
 
 # engine interfacing
 from engine.darkForest import *
+from threading import Thread
 
 # to track the current move
 class MoveTracker():
@@ -61,8 +62,10 @@ class Board(chess.Board):
 				totalMapping[key] = mapping[key];
 		
 		svgData = chess.svg.board(self, fill=totalMapping,).encode("UTF-8");
+		pngData = BytesIO();
 		drawing = svg2rlg(BytesIO(svgData));
-		renderPM.drawToFile(drawing, BUFF_PNG_FILE, fmt="PNG");
+		renderPM.drawToFile(drawing, pngData, fmt="PNG");
+		return pngData;
 
 	# reset and redraw the board
 	def resetWrapper(self, win):
@@ -123,6 +126,15 @@ class Window(Tk):
 		self.engineBtn = SpecBtn(self.btns, "Start engine", lambda event: self.toggleEngine(self.engineBtn));
 		self.engineOn = False;
 
+	def reloadBoard(self):
+		# grab, open display and resize to viewport
+		boardPng = Image.open(self.board.writeDisplayPng(self.cM));
+		boardPng = ImageTk.PhotoImage(boardPng.resize((winS, winS)));
+		
+		# draw the image
+		self.label.config(image=boardPng);
+		self.label.image = boardPng;
+	
 	def toggleEngine(self, btn):
 		# find what button we have toggled now
 		startText = "Start engine";
@@ -131,21 +143,9 @@ class Window(Tk):
 
 		# ENGINE IS ROARING!!!!
 		btn.config(image=PhotoImage(), text=(stopText if isStartInnerText else startText));
-		print(f"Engine {"stopping" if isStartInnerText else "starting"}");
+		print(f"Engine {"starting" if isStartInnerText else "stopping"}");
 		self.engineOn = not self.engineOn;
 
-	def reloadBoard(self):
-		# grabbing the display
-		self.board.writeDisplayPng(self.cM);
-		
-		# convert and resizing to viewport
-		boardPng = Image.open(BUFF_PNG_FILE);
-		boardPng = ImageTk.PhotoImage(boardPng.resize((winS, winS)));
-		
-		# draw the image
-		self.label.config(image=boardPng);
-		self.label.image = boardPng;
-			
 	# handles the clicking of a piece, this is where moves are made
 	def handleClick(self, event):
 		global ratS, sqS;
@@ -184,10 +184,9 @@ class Window(Tk):
 				print("UI move made:", sanCurrM);
 			cM = "";
 		self.cM.set(cM);
-		self.reloadBoard();
 
-		# make engine move
-		if moveWasMade and self.engineOn:
+		self.reloadBoard(); # reload the board after the move
+		if moveWasMade and self.engineOn: # engine
 			move = callEngine(self.board);
 			self.board.push(move);
 			self.reloadBoard();
@@ -197,5 +196,3 @@ if __name__ == "__main__":
     os.system("cls");
     win = Window();
     win.mainloop();
-    
-    os.remove(BUFF_PNG_FILE); # remove any fluffy files

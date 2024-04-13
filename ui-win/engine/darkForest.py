@@ -25,6 +25,8 @@ def minimaxPrune(board, depth, alp, bet):
 
         # push
         board.push(move);
+        if bestMove == None:
+            bestMove = move;
 
         # if we already find a checkmate
         if board.is_checkmate() and depth == STARTING_DEPTH:
@@ -38,7 +40,7 @@ def minimaxPrune(board, depth, alp, bet):
         # pruning 
         if alp < nextEval:
             # check that we have a best move
-            if depth == STARTING_DEPTH or bestMove == None:
+            if depth == STARTING_DEPTH:
                 bestMove = move;
             alp = nextEval;
         board.pop();

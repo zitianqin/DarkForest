@@ -1,8 +1,5 @@
 import pyautogui as pag
 
-# file paths
-BUFF_PNG_FILE = "buff.png";
-
 # graphics sizing
 winS = int(pag.size()[1] * 2 / 3);
 ratS = 0.245;
