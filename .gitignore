@@ -1,6 +1,7 @@
 uiOut/
 engineOut/
 ui-win/engine/__pycache__/
+ui-win/engine/test.py
 ui-win/__pycache__/
 *.exe
 ui-win/buff.png
