@@ -52,6 +52,5 @@ def callEngine(board):
     global numPositions, bestMove;
     numPositions = 0;
     eval = minimaxPrune(board, STARTING_DEPTH, -inf, inf);
-    print(bestMove in board.legal_moves);
     print(f"Engine move made: {str(bestMove)}, {eval} evaluated after {numPositions} positions");
     return bestMove;
