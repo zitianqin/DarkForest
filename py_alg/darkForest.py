@@ -22,8 +22,11 @@ def minimaxPrune(board, depth, alp, bet):
     global numPositions;
     bestMove = None;
     for move in board.legal_moves:
-        # not a very hard decision, my guy
-        if len(board.legal_moves) == 1: return evalPcVal(board) + transEval(board), move;
+        # not a very hard decision, my guy and also think less if there's less moves to make
+        numLegM = numLegalMoves(board);
+        if numLegM == 1: return evalPcVal(board) + transEval(board), move;
+        depth = depth * (int(ceil(1 - (1/numLegM))));
+
         numPositions += 1;
         
         # push

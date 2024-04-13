@@ -1,5 +1,12 @@
 import chess
 
+# what do you think this does :)
+def numLegalMoves(board):
+    numM = 0;
+    for move in board.legal_moves:
+        numM += 1;
+    return numM;
+
 # evaluates a board from just the pieces on board
 values = {"p": 1, "k": 0, "q": 10, "b": 3, "n": 3, "r": 5};
 def evalPcVal(board):
