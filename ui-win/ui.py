@@ -15,7 +15,7 @@ from reportlab.graphics import renderPM
 from io import BytesIO
 
 # engine interfacing
-from py_alg.darkForest import *
+from engine.darkForest import *
 
 # to track the current move
 class MoveTracker():

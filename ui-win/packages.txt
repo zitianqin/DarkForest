@@ -2,4 +2,3 @@ pip3 install chess
 pip3 install svglib
 pip3 install reportlab
 pip3 install rlPyCairo
-pip3 install watchdog
