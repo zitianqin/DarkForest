@@ -139,14 +139,13 @@ def merge(arr, lo, mid, hi):
     
     # merging time
     while i < leftLen and j < rightLen:
-        try:
-            if left[i][1] >= right[j][1]:
-                arr[k] = left[i];
-                i += 1;
-            else:
-                arr[k] = right[j];
-                j += 1;
-            k += 1;
+        if left[i][1] >= right[j][1]:
+            arr[k] = left[i];
+            i += 1;
+        else:
+            arr[k] = right[j];
+            j += 1;
+        k += 1;
     
     # copy the rest
     while i < leftLen:
