@@ -277,8 +277,9 @@ class Window(Tk):
 
 if __name__ == "__main__":
 	# initialise window
-	win = Window();
-	win.mainloop();
-
-	win.stopWatchWrap(); # make sure to stop watchdog 
-	os.remove(BUFF_PNG_FILE); # remove any fluffy files
+    os.system("cls");
+    win = Window();
+    win.mainloop();
+    
+    win.stopWatchWrap(); # make sure to stop watchdog 
+    os.remove(BUFF_PNG_FILE); # remove any fluffy files

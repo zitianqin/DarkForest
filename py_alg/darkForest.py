@@ -4,6 +4,7 @@ from helpers import *
 from transTable import *
 
 # watching
+import os
 from watchdog.observers import Observer
 from watchdog.events import LoggingEventHandler
 
@@ -16,7 +17,7 @@ STARTING_DEPTH = 4;
 numPositions = 0;
 def minimaxPrune(board, depth, alp, bet):
     if (depth == 0):
-        return evalPcVal(board) + transEval(board), board.peek();
+        return allEval(board), board.peek();
     
     # iterate
     global numPositions;
@@ -24,26 +25,20 @@ def minimaxPrune(board, depth, alp, bet):
     for move in board.legal_moves:
         # not a very hard decision, my guy and also think less if there's less moves to make
         numLegM = numLegalMoves(board);
-        if numLegM == 1: return evalPcVal(board) + transEval(board), move;
+        if numLegM == 1: return allEval(board), move;
         depth = depth * (int(ceil(1 - (1/numLegM))));
 
         numPositions += 1;
         
-        # push
+        # push and evaluate
         board.push(move);
-        if hasRepeatedMoves(board): # generally don't want repetition
-            board.pop();
-            continue;
-        
-        # evaluate
         nextEval, nextMove = minimaxPrune(board, depth - 1, -bet, -alp); # we don't care about next moves which we can't make
-        nextEval += numCoverSquares(board, move.to_square); # coverage
-        nextEval += centreCtrlVal(board, move.to_square); # centre control
         nextEval *= -1; # opponent's best move is bad for us
         board.pop();
         
         # pruning and check that we have a best move
         if bestMove == None or alp <= nextEval:
+            print(nextEval);
             bestMove = move;
         alp = max(alp, nextEval);
         if (nextEval >= bet):
@@ -90,7 +85,7 @@ class EngineHandler(LoggingEventHandler):
         if move == None: return;
         with open("..\\engineOut\\move.txt", "w+") as file:
             file.write(str(move));
-        print("Engine move made:", str(move), ", evaluated after ", numPositions, " positions");
+        print(f"Engine move made: {str(move)}, {eval}, evaluated after {numPositions} positions");
 
 if __name__ == "__main__":
     # instance watchdog
@@ -100,14 +95,12 @@ if __name__ == "__main__":
     # schedule at uiOut directory
     watcher.schedule(handler, UI_OUT_DIR);
     watcher.start();
-
-    # transposition table initialise
-    initTables();
     
     # begin watching
+    os.system("cls");
     try:
         while watcher.is_alive():
-            watcher.join(0.5);
+            watcher.join();
     except KeyboardInterrupt:
         watcher.stop();
         watcher.join();

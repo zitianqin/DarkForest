@@ -215,7 +215,7 @@ def transEval(board):
         pType = pc.piece_type;
         col = pc.color;
 
-        index = 2*(pType - 1) + (1 if col == chess.WHITE else 0);
+        index = 2*(pType - 1) + (0 if col == chess.WHITE else 1);
         mg[0 if col == chess.WHITE else 1] += mgTable[index][sq];
         eg[0 if col == chess.WHITE else 1] += egTable[index][sq];
         gamePhase += gamephaseInc[index];

@@ -1,4 +1,6 @@
 import chess
+from math import *
+from transTable import *
 
 # what do you think this does :)
 def numLegalMoves(board):
@@ -7,34 +9,45 @@ def numLegalMoves(board):
         numM += 1;
     return numM;
 
-# evaluates a board from just the pieces on board
-values = {"p": 1, "k": 0, "q": 10, "b": 3, "n": 3, "r": 5};
-def evalPcVal(board):
-    boardFen = str(board.board_fen());
+# evaluate for own checkmate and checks
+def evalOwnCheck(board):
+    # checkmate is very very bad
+    if board.is_checkmate() and board.turn != board.outcome().winner: return -inf;
     
+    # checks
+    if board.is_check(): return len(board.checkers());
+    return 0;
+
+# evaluates a board from just the pieces on board
+values = {
+    chess.PAWN: 1, 
+    chess.KING: 0, 
+    chess.QUEEN: 10,
+    chess.BISHOP: 3, 
+    chess.KNIGHT: 3, 
+    chess.ROOK: 5
+};
+def evalPcVal(board):
     # white and black eval
     whiteEval = 0;
     blackEval = 0;
-    for c in boardFen:
-        if ord("A") <= ord(c) and ord(c) <= ord("Z"):
-            lowerC = chr(ord(c) + ord("a") - ord("A"));
-            whiteEval += values[lowerC];
-        if ord("a") <= ord(c) and ord(c) <= ord("z"):
-            blackEval += values[c];
+    for sq in chess.SQUARES:
+        pc = board.piece_at(sq);
+        if pc == None: continue;
+        pType = pc.piece_type;
+        if pc.color:
+            whiteEval += values[pType];
+        else:
+            blackEval += values[pType];
 
-    return (whiteEval - blackEval) * (1 if board.turn else -1);
+    return (whiteEval - blackEval);
 
 # better way of evaluating pieces
 def getPcTypeVal(pcType):
-    if pcType == chess.PAWN: return values["p"];
-    if pcType == chess.KING: return values["k"];
-    if pcType == chess.QUEEN: return values["q"];
-    if pcType == chess.BISHOP: return values["b"];
-    if pcType == chess.KNIGHT: return values["k"];
-    if pcType == chess.ROOK: return values["r"];
+    return values[pcType];
 
 # takes in captures, promotions to skew the evaluation
-def multiplierEval(board, eval):
+def captureEval(board):
     lastMove = board.pop(); # get last position
     
     # get from move info
@@ -49,22 +62,22 @@ def multiplierEval(board, eval):
 
     # pushes for better trades
     valDiff = max(toVal - fromVal, 0);
-    enemy = board.turn;
+    enemy = not board.turn;
     board.push(lastMove); # restore
     
     # if we're capturing a piece
     if toPc != None and toPc.color == enemy:
-        eval += valDiff;
+        return toVal + valDiff;
     # also check for enpassant
     if fromPc.piece_type == chess.PAWN and chess.square_file(fromSq) != chess.square_file(toSq):
-        eval += valDiff;
+        return toVal + valDiff;
     
     # if we're promoting a pawn
     promotion = lastMove.promotion;
     if lastMove.promotion != None:
-        eval += getPcTypeVal(promotion) - values["p"];
+        return getPcTypeVal(promotion) - values["p"];
     
-    return eval;
+    return 0;
 
 # orders the board's list of legal moves to skew the search
 def orderMovesByGuess(board):
@@ -78,22 +91,6 @@ def orderMovesByGuess(board):
         # promotion skew
     
     return orderedMoves;
-
-# checks if moves have been repeated
-repeats = 2;
-numM = repeats * 2 + 1;
-def hasRepeatedMoves(board):
-    if len(board.move_stack) < numM: return;
-    lastMoves = [];
-    currEval = evalPcVal(board);
-    for i in range(numM):
-        lastMoves.append(board.pop());
-    lastEval = evalPcVal(board);
-    for i in range(numM):
-        board.push(lastMoves[numM - 1 - i]);
-    
-    if currEval == lastEval and lastMoves[0] == lastMoves[numM - 1]: print(lastMoves[0], lastMoves[numM - 1]);
-    return lastMoves[0] == lastMoves[numM - 1];
 
 # gets the number of squares covered by a piece, multiplier for each move
 def numCoverSquares(board, sq):
@@ -116,28 +113,36 @@ def centreCtrlVal(board, sq):
     centreSquares = [chess.D4, chess.E4, chess.D5, chess.E5];
     numAtking = 0;
     isOnCentre = sq in centreSquares;
-    for square in centreSquares:
-        if sq in board.attackers(not board.turn, square):
-            numAtking += 1;
-
-    totalVal = (numAtking + (1 if isOnCentre else 0));
-    return totalVal;
-
-def centreCtrlVal(board, sq):
-    centreSquares = [chess.D4, chess.E4, chess.D5, chess.E5];
-    numAtking = 0;
-    isOnCentre = sq in centreSquares;
 
     for square in centreSquares:
         if board.piece_at(square) is not None and board.piece_at(square).color != board.turn:
             piece = board.piece_at(square)
             if not (piece.piece_type == chess.KING or piece.piece_type == chess.ROOK):
-                numAtking += 5;
+                numAtking += 1;
 
-    multiplier = 1;
-    if board.piece_at(sq).piece_type == chess.PAWN:
-        multiplier = 3;
-    elif board.piece_at(sq).piece_type in [chess.BISHOP, chess.KNIGHT, chess.QUEEN]:
-        multiplier = 2;
+    # multiplier = 1;
+    # if board.piece_at(sq).piece_type == chess.PAWN:
+    #     multiplier = 3;
+    # elif board.piece_at(sq).piece_type in [chess.BISHOP, chess.KNIGHT, chess.QUEEN]:
+    #     multiplier = 2;
 
-    return (numAtking + (1 if isOnCentre else 0)) * multiplier;
+    return (numAtking + (1 if isOnCentre else 0));
+
+# combines all evaluations
+tablesInited = False;
+def allEval(board):
+    # transposition table initialise
+    global tablesInited;
+    if not tablesInited:
+        initTables();
+        tablesInited = not tablesInited;
+    
+    lastMoveToSq = board.peek().to_square;
+    ev1 = evalOwnCheck(board);
+    ev2 = captureEval(board);
+    ev3 = numCoverSquares(board, lastMoveToSq);
+    ev4 = centreCtrlVal(board, lastMoveToSq);
+    ev5 = transEval(board) / 200;
+    totalEval = (1 if board.turn else -1) * (ev1 + ev2 + ev3 + ev4 + ev5);
+    # print(ev1, ev2, ev3, ev4, ev5, totalEval);
+    return totalEval;
