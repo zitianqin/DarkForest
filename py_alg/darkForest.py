@@ -11,7 +11,7 @@ from watchdog.events import LoggingEventHandler
 UI_OUT_DIR = "..\\uiOut";
 UI_FEN_OUT = UI_OUT_DIR + "\\fen.txt";
 UI_MOVE_OUT = UI_OUT_DIR + "\\move.txt";
-STARTING_DEPTH = 4;
+STARTING_DEPTH = 3;
 
 # evaluates a position recursively and return best move with evaluation
 numPositions = 0;
@@ -32,19 +32,26 @@ def minimaxPrune(board, depth, alp, bet):
         
         # push and evaluate
         board.push(move);
-        nextEval = minimaxPrune(board, depth - 1, -bet, -alp); # we don't care about next moves which we can't make
-        nextEval = round(nextEval, 2);
-        nextEval *= -1; # opponent's best move is bad for us
-        board.pop();
+        nextEval = -round(minimaxPrune(board, depth - 1, -bet, -alp), 4);
         
-        # pruning and check that we have a best move
-        if alp <= nextEval:
-            if depth == STARTING_DEPTH or bestMove == None: bestMove = move;
-        alp = max(alp, nextEval);
-        if (nextEval >= bet):
-            return bet;
+        # pruning 
+        if alp < nextEval:
+            # check that we have a best move
+            if depth == STARTING_DEPTH or bestMove == None:
+                bestMove = move;
+            # v0 = evalPcVal(board);
+            # v1 = evalOwnCheck(board);
+            # v2 = captureEval(board);
+            # v3 = numCoverSquares(board, move.to_square);
+            # v4 = centreCtrlVal(board, move.to_square);
+            # v5 = transEval(board) / 100;
+            # print(f"new best move {move} //// {v0}, {v1}, {v2}, {v3}, {v4}, {v5}, {v0+v1+v2+v3+v4+v5}");
+            alp = nextEval;
+        board.pop();
 
-    return -alp;
+        if (nextEval >= bet) and not isinf(bet):
+            return bet;
+    return alp;
 
 lastUiMove = None; # make sure we're somehow not repeating moves
 class EngineHandler(LoggingEventHandler):

@@ -12,7 +12,9 @@ def numLegalMoves(board):
 # evaluate for own checkmate and checks
 def evalOwnCheck(board):
     # checkmate is very very bad
-    if board.is_checkmate() and board.turn != board.outcome().winner: return -inf;
+    if board.is_checkmate() and board.turn != board.outcome().winner:
+        print("checkmate found??", "Black" if board.turn else "White", "win");
+        return -inf;
     
     # checks
     if board.is_check(): return len(board.checkers());
@@ -40,7 +42,7 @@ def evalPcVal(board):
         else:
             blackEval += values[pType];
 
-    return (whiteEval - blackEval);
+    return (whiteEval - blackEval) * (1 if board.turn else -1);
 
 # better way of evaluating pieces
 def getPcTypeVal(pcType):
@@ -67,15 +69,15 @@ def captureEval(board):
     
     # if we're capturing a piece
     if toPc != None and toPc.color == enemy:
-        return toVal + valDiff;
+        return valDiff;
     # also check for enpassant
     if fromPc.piece_type == chess.PAWN and chess.square_file(fromSq) != chess.square_file(toSq):
-        return toVal + valDiff;
+        return valDiff;
     
     # if we're promoting a pawn
     promotion = lastMove.promotion;
     if lastMove.promotion != None:
-        return getPcTypeVal(promotion) - values["p"];
+        return getPcTypeVal(promotion) - values[chess.PAWN];
     
     return 0;
 
@@ -86,7 +88,7 @@ def numCoverSquares(board, sq):
     # pawn is a special case
     if pc.piece_type == chess.PAWN:
         # check for the A and H files, where pawn only covers 1
-        return 1 if chess.square_file(sq) % 7 == 0 else 2;
+        return 2 if chess.square_file(sq) % 7 == 0 else 4;
     
     numCovers = 0;
     for move in board.legal_moves:
@@ -105,9 +107,9 @@ def centreCtrlVal(board, sq):
         if board.piece_at(square) is not None and board.piece_at(square).color != board.turn:
             piece = board.piece_at(square)
             if not (piece.piece_type == chess.KING or piece.piece_type == chess.ROOK):
-                numAtking += 1;
+                numAtking += 2;
 
-    return (numAtking + (1 if isOnCentre else 0));
+    return (numAtking + (2 if isOnCentre else 0));
 
 # combines all evaluations
 tablesInited = False;
@@ -119,12 +121,13 @@ def allEval(board):
         tablesInited = not tablesInited;
     
     lastMoveToSq = board.peek().to_square;
-    ev1 = evalOwnCheck(board);
-    ev2 = captureEval(board);
-    ev3 = numCoverSquares(board, lastMoveToSq);
-    ev4 = centreCtrlVal(board, lastMoveToSq);
-    ev5 = transEval(board) / 100;
-    totalEval = (1 if board.turn == chess.WHITE else -1) * (ev1 + ev2 + ev3 + ev4 + ev5);
+    v0 = evalPcVal(board);
+    v1 = evalOwnCheck(board);
+    v2 = captureEval(board);
+    v3 = numCoverSquares(board, lastMoveToSq);
+    v4 = centreCtrlVal(board, lastMoveToSq);
+    v5 = transEval(board) / 100;
+    totalEval = v0 + v1 + v2 + v3 + v4 + v5;
     return totalEval;
 
 # merge sort for move: eval dictionary
@@ -139,7 +142,7 @@ def merge(arr, lo, mid, hi):
     
     # merging time
     while i < leftLen and j < rightLen:
-        if left[i][1] >= right[j][1]:
+        if left[i][1] > right[j][1]:
             arr[k] = left[i];
             i += 1;
         else:
