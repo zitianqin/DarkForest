@@ -116,6 +116,10 @@ def centreCtrlVal(board, sq):
 def badTradeEval(board):
     return 0;
 
+# checking if a move is "safe"
+def safeMobilityEval(board):
+    return 0;
+
 # combines all evaluations
 tablesInited = False;
 def allEval(board):
