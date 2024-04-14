@@ -123,7 +123,7 @@ def hungPcEval(board):
         # find lowest value enemy pc
         minEnemyPcVal = 10;
         for sq in enemyAtkers:
-            minEnemyPcVal = max(min(minEnemyPcVal, getPcTypeVal(board.piece_type_at(sq))), 1);
+            minEnemyPcVal = max(min(minEnemyPcVal, getPcTypeVal(board.piece_type_at(sq))), 0.2);
         multiplier *= (playerPcVal / minEnemyPcVal); # throwing higher value pieces into lower value is bad
 
         # is attacked by the enemy
@@ -132,7 +132,6 @@ def hungPcEval(board):
                 totalEval -= (playerPcVal - minEnemyPcVal) * multiplier;
             else:
                 totalEval -= playerPcVal * multiplier;
-    
     return totalEval;
 
 # deducts by the number of attackers on square
@@ -159,5 +158,5 @@ def allEval(board):
     v5 = transEval(board); # just some random scaling down
     v6 = hungPcEval(board);
     v7 = attackedSqEval(board);
-    totalEval = int((v0 + v1 + v2 + v3 + v4 + v5 + v6) * 70) + v7;
+    totalEval = int((v0 + v1 + v2 + v3 + v4 + v5 + v6)*70) + v7;
     return totalEval;
