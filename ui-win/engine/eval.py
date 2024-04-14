@@ -35,7 +35,7 @@ def evalPcVal(board):
         else:
             blackEval += values[pType];
 
-    return (whiteEval - blackEval) * (1 if board.turn else -1);
+    return (whiteEval - blackEval);
 
 # better way of evaluating pieces
 def getPcTypeVal(pcType):
@@ -48,12 +48,15 @@ def captureEval(board):
     # get from move info
     fromSq = lastMove.from_square;
     fromPc = board.piece_at(fromSq);
-    fromVal = 0 if fromPc == None else getPcTypeVal(fromPc.piece_type);
+    fromVal = getPcTypeVal(fromPc.piece_type);
 
     # get from move info
     toSq = lastMove.to_square;
     toPc = board.piece_at(toSq);
-    toVal = 0 if toPc == None else getPcTypeVal(toPc.piece_type);
+    if toPc == None:
+        board.push(lastMove);
+        return 0;
+    toVal = getPcTypeVal(toPc.piece_type);
 
     # pushes for better trades, especially with pawns
     valDiff = toVal - fromVal + 1 if fromPc.piece_type == chess.PAWN else 0;
@@ -77,36 +80,38 @@ def captureEval(board):
 # gets the number of squares covered by a piece, multiplier for each move
 def numCoverSquares(board, sq):
     pc = board.piece_at(sq);
+    if pc == None: return 0;
+    singleVal = 2;
     
     # pawn is a special case
     if pc.piece_type == chess.PAWN:
         # check for the A and H files, where pawn only covers 1
-        return 1 if chess.square_file(sq) % 7 == 0 else 2;
+        return singleVal if chess.square_file(sq) % 7 == 0 else singleVal * 2;
     
     numCovers = 0;
     for move in board.legal_moves:
         if move.to_square == sq:
-            numCovers += 1;
+            numCovers += singleVal;
     
     return numCovers;
 
 # adds value for centre control
 def centreCtrlVal(board, sq):
+    singleVal = 2;
     centreSquares = [chess.D4, chess.E4, chess.D5, chess.E5];
     numAtking = 0;
     isOnCentre = sq in centreSquares;
 
     for square in centreSquares:
         if board.piece_at(square) is not None and board.piece_at(square).color != board.turn:
-            piece = board.piece_at(square)
+            piece = board.piece_at(square);
             if not (piece.piece_type == chess.KING or piece.piece_type == chess.ROOK):
-                numAtking += 2;
+                numAtking += singleVal;
 
-    return (numAtking + (2 if isOnCentre else 0));
+    return (numAtking + (singleVal if isOnCentre else 0));
 
 # calculates all hung pieces for the current state (after move push)
 def hungPcEval(board):
-    multiplier = 5; # hanging pieces is bad
     totalEval = 0;
     for sq in chess.SQUARES:
         pc = board.piece_at(sq);
@@ -121,18 +126,17 @@ def hungPcEval(board):
         enemyAtkers = board.attackers(playerTurn, sq);
         
         # find lowest value enemy pc
-        minEnemyPcVal = 10;
+        minEnemyPcVal = inf;
         for sq in enemyAtkers:
-            minEnemyPcVal = max(min(minEnemyPcVal, getPcTypeVal(board.piece_type_at(sq))), 0.2);
-        multiplier *= (playerPcVal / minEnemyPcVal); # throwing higher value pieces into lower value is bad
+            minEnemyPcVal = min(minEnemyPcVal, getPcTypeVal(board.piece_type_at(sq)));
 
         # is attacked by the enemy
         if playerTurn == pc.color and len(enemyAtkers) > 0:
             if len(playerAtkers) > 0: # is defended by our allies
-                totalEval -= (playerPcVal - minEnemyPcVal) * multiplier;
+                totalEval -= max((playerPcVal - minEnemyPcVal), 0);
             else:
-                totalEval -= playerPcVal * multiplier;
-    return totalEval;
+                totalEval -= playerPcVal;
+    return totalEval / 4;
 
 # deducts by the number of attackers on square
 def attackedSqEval(board):
@@ -143,6 +147,7 @@ def attackedSqEval(board):
 # combines all evaluations
 tablesInited = False;
 def allEval(board):
+    SCALE = 20;
     # transposition table initialise
     global tablesInited;
     if not tablesInited:
@@ -155,8 +160,8 @@ def allEval(board):
     v2 = captureEval(board);
     v3 = numCoverSquares(board, lastMoveToSq);
     v4 = centreCtrlVal(board, lastMoveToSq);
-    v5 = transEval(board); # just some random scaling down
-    v6 = hungPcEval(board);
-    v7 = attackedSqEval(board);
-    totalEval = int((v0 + v1 + v2 + v3 + v4 + v5 + v6)*70) + v7;
-    return totalEval;
+    v5 = hungPcEval(board);
+    v6 = attackedSqEval(board);
+    v7 = round(transEval(board)/SCALE, 2)*(1 if board.turn == chess.WHITE else -1); # just some random scaling down
+    totalEval = [v0, v1, v2, v3, v4, v5, v6, v7];
+    return sum(totalEval) * (1 if board.turn == chess.WHITE else -1), totalEval;

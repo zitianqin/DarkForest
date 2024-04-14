@@ -72,27 +72,6 @@ class Board(chess.Board):
 		self.reset();
 		win.reloadBoard();
 
-	# when engine writes FEN to buff file, board changes to the FEN representation
-	def loadEngineFen(self, win, fen):
-		try:
-			self.set_fen(fen);
-		except Exception as e:
-			print("Error: ", e);
-		win.reloadBoard();
- 
-	# when engine writes move to buff file, board pushes move
-	def loadEngineMove(self, win, moveStr):
-		try:
-			move = chess.Move.from_uci(moveStr); # convert output to move
-			if move in self.legal_moves:
-				self.push(move);
-				print("Move made by engine:", moveStr);
-			else:
-				print("Invalid engine move: ", moveStr);
-				win.reloadBoard();
-		except Exception as e:
-			print("Error: ", e);
-
 # main window class
 class Window(Tk):
 	def __init__(self):
@@ -189,8 +168,13 @@ class Window(Tk):
 		self.reloadBoard(); # reload the board after the move
 		if moveWasMade and self.engineOn: # engine
 			move = callEngine(self.board);
-			self.board.push(move);
-			self.reloadBoard();
+			if move == None: # termination occurred
+				print("Good game");
+			elif move in self.board.legal_moves:
+				self.board.push(move);
+				self.reloadBoard();
+			else:
+				print("Invalid engine move:", move);
 
 if __name__ == "__main__":
 	# initialise engine goodies
