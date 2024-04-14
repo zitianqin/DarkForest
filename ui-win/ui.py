@@ -14,11 +14,9 @@ from svglib.svglib import svg2rlg
 from reportlab.graphics import renderPM
 from io import BytesIO
 
-# interfacing with file watching
-from concurrent.futures import ThreadPoolExecutor
-import watchdog
-import watchdog.events
-import watchdog.observers
+# engine interfacing
+from engine.darkForest import *
+from engine.transTable import *
 
 # to track the current move
 class MoveTracker():
@@ -64,83 +62,15 @@ class Board(chess.Board):
 				totalMapping[key] = mapping[key];
 		
 		svgData = chess.svg.board(self, fill=totalMapping,).encode("UTF-8");
+		pngData = BytesIO();
 		drawing = svg2rlg(BytesIO(svgData));
-		renderPM.drawToFile(drawing, BUFF_PNG_FILE, fmt="PNG");
+		renderPM.drawToFile(drawing, pngData, fmt="PNG");
+		return pngData;
 
 	# reset and redraw the board
 	def resetWrapper(self, win):
 		self.reset();
 		win.reloadBoard();
-
-	# when engine writes FEN to buff file, board changes to the FEN representation
-	def loadEngineFen(self, win, fen):
-		try:
-			self.set_fen(fen);
-		except Exception as e:
-			print("Error: ", e);
-		win.reloadBoard();
- 
-	# when engine writes move to buff file, board pushes move
-	def loadEngineMove(self, win, moveStr):
-		try:
-			move = chess.Move.from_uci(moveStr); # convert output to move
-			if move in self.legal_moves:
-				self.push(move);
-			else:
-				print("Invalid engine move");
-		except Exception as e:
-			print("Error: ", e);
-		win.reloadBoard();
-	
-	# after each move the FEN state and move will be uploaded to their files
-	def saveUiMove(self):
-		with open(UI_MOVE_OUT, "w+") as file:
-			file.write(str(self.peek()));
-		with open(UI_FEN_OUT, "w+") as file:
-			file.write(str(self.fen()));
-
-# watches events on engine output files
-class EngineHandler(watchdog.events.LoggingEventHandler):
-    def __init__(self, win):
-        super().__init__();
-        self.winRef = win;
-
-    # change the on_modified() method to log
-    def on_modified(self, event):
-        # find which file was modified
-        isFenFile = event.src_path == ENGINE_FEN_OUT;
-        path = ENGINE_FEN_OUT if isFenFile else ENGINE_MOVE_OUT;
-
-		# open the file to read output
-        with open(path, "r") as file:
-            global output;
-            output = file.readline();
-        
-        # reading files modifies them with output = ""
-        if (output == ""):
-            return;
-        
-        # do the engine output
-        if isFenFile:
-            self.winRef.board.loadEngineFen(self.winRef, output);
-        else:
-            self.winRef.board.loadEngineMove(self.winRef, output);
-
-# watcher for engine output
-class Watcher(watchdog.observers.Observer):
-    def __init__(self, win):
-        super().__init__();
-        self.handler = EngineHandler(win);
-        self.schedule(self.handler, ENGINE_OUT_DIR);
-    
-    def startWatch(self):
-        self.start();
-        while self.is_alive():
-            self.join(1); # every second we check for engine output
-    
-    def stopWatch(self):
-        self.stop();
-        self.join();
 
 # main window class
 class Window(Tk):
@@ -159,10 +89,6 @@ class Window(Tk):
 		
 		# construct the move tracker
 		self.cM = MoveTracker();
-  
-		# construct watcher and threads
-		self.watcher = Watcher(self);
-		self.watcherTPool = ThreadPoolExecutor(max_workers=2);
 
 		# construct abstract board
 		self.board = Board();
@@ -176,51 +102,29 @@ class Window(Tk):
 		self.resetBoardBtn = SpecBtn(self.btns, "Reset", lambda event: self.board.resetWrapper(self));
 
 		# construct buttons that toggles calls from engine's FEN output
-		self.engineBtn = SpecBtn(self.btns, "Start engine watch", lambda event: self.toggleWatchWrap(self.engineBtn));
-
-	def toggleWatchWrap(self, btn):
-		# find what button we have toggled now
-		startText = "Start engine watch";
-		stopText = "Stop engine watch";
-		isStartInnerText = btn["text"] == startText;
-
-		# run the command and swap to the other
-		if isStartInnerText:
-			self.startWatchWrap();
-			btn.config(image=PhotoImage(), text=stopText);
-		else:
-			self.stopWatchWrap();
-			btn.config(image=PhotoImage(), text=startText);
-
-	def startWatchWrap(self):
-		watcher = self.watcher;
-		if watcher.is_alive():
-			print("already watching");
-		else:
-			print("starting watchdog");
-			self.watcherTPool.submit(watcher.startWatch);
-
-	def stopWatchWrap(self):
-		watcher = self.watcher;
-		if not watcher.is_alive():
-			print("already stopped");
-		else:
-			print("stopping watchdog");
-			self.watcherTPool.submit(watcher.stopWatch);
-			self.watcher = Watcher(self.board); # instance a new watcher for next time
+		self.engineBtn = SpecBtn(self.btns, "Start engine", lambda event: self.toggleEngine(self.engineBtn));
+		self.engineOn = False;
 
 	def reloadBoard(self):
-		# grabbing the display
-		self.board.writeDisplayPng(self.cM);
-		
-		# convert and resizing to viewport
-		boardPng = Image.open(BUFF_PNG_FILE);
+		# grab, open display and resize to viewport
+		boardPng = Image.open(self.board.writeDisplayPng(self.cM));
 		boardPng = ImageTk.PhotoImage(boardPng.resize((winS, winS)));
 		
 		# draw the image
 		self.label.config(image=boardPng);
 		self.label.image = boardPng;
-			
+	
+	def toggleEngine(self, btn):
+		# find what button we have toggled now
+		startText = "Start engine";
+		stopText = "Stop engine";
+		isStartInnerText = btn["text"] == startText;
+
+		# ENGINE IS ROARING!!!!
+		btn.config(image=PhotoImage(), text=(stopText if isStartInnerText else startText));
+		print(f"Engine {"starting" if isStartInnerText else "stopping"}");
+		self.engineOn = not self.engineOn;
+
 	# handles the clicking of a piece, this is where moves are made
 	def handleClick(self, event):
 		global ratS, sqS;
@@ -248,21 +152,35 @@ class Window(Tk):
 		cM += sqPos;
 		
 		# check if move was made
+		moveWasMade = False; # for UI delay
 		if len(cM) == 4:
 			sanCurrM = uciM(cM, self.board);
 			
 			# if legal we push
 			if sanCurrM in self.board.legal_moves:
 				self.board.push(sanCurrM);
+				moveWasMade = True;
+				print("UI move made:", sanCurrM);
+    
 			cM = "";
-			self.board.saveUiMove();
 		self.cM.set(cM);
-		self.reloadBoard();
+
+		self.reloadBoard(); # reload the board after the move
+		if moveWasMade and self.engineOn: # engine
+			move = callEngine(self.board);
+			if move == None: # termination occurred
+				print("Good game");
+			elif move in self.board.legal_moves:
+				self.board.push(move);
+				self.reloadBoard();
+			else:
+				print("Invalid engine move:", move);
 
 if __name__ == "__main__":
-	# initialise window
-	win = Window();
-	win.mainloop();
-
-	win.stopWatchWrap(); # make sure to stop watchdog 
-	os.remove(BUFF_PNG_FILE); # remove any fluffy files
+	# initialise engine goodies
+    initZobristMap();
+    
+    # initiliase window
+    os.system("cls");
+    win = Window();
+    win.mainloop();
