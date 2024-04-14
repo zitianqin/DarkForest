@@ -5,7 +5,7 @@ MAX_64BIT = 0xffffffffffffffff;
 NUM_SQUARES = len(chess.SQUARES);
 NUM_PIECE_TYPES = 12;
 MAX_MAPNUMS = NUM_SQUARES * NUM_PIECE_TYPES;
-MAX_TABLELEN = 0xffffff;
+MAX_TABLELEN = 0xffffffff;
 
 zobristMap = [None] * NUM_SQUARES;
 

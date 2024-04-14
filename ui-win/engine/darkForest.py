@@ -4,7 +4,7 @@ from .helpers import *
 from .eval import *
 from .transTable import *
 
-STARTING_DEPTH = 4;
+STARTING_DEPTH = 6;
 
 # evaluates a position recursively and return best move with evaluation
 numPositions = 0;
@@ -17,7 +17,8 @@ def minimaxPrune(board, depth, alp, bet):
 
     # constants
     global numPositions, bestMove;
-    bestEval = -inf if board.turn == chess.WHITE else inf;
+    isPlayerWhite = board.turn;
+    bestEval = -inf if isPlayerWhite else inf;
     legMs = board.legal_moves;
     evals = [];
 
@@ -32,7 +33,7 @@ def minimaxPrune(board, depth, alp, bet):
         if legMs.count() == 1:
             if depth == STARTING_DEPTH:
                 bestMove = move;
-                print(f"Setting move {move} --> {evals} = {sum(evals)}");
+                print(f"Only move, setting move {move} --> {evals} = {sum(evals)}");
             eval = allEval(board);
             board.pop();
             return eval;
@@ -41,32 +42,34 @@ def minimaxPrune(board, depth, alp, bet):
         if board.is_checkmate() and depth == STARTING_DEPTH:
             board.pop();
             bestMove = move;
-            print(f"Setting move {move} --> {evals} = {sum(evals)}");
-            # if the board is black then black is dead
-            return inf if board.turn == chess.BLACK else -inf, [];
+            print(f"Checkmate, setting move {move} --> {evals} = {sum(evals)}");
+            # if the board is black to move then black killed white
+            return -inf if not isPlayerWhite else inf, [];
 
         # temporary push and evaluate with Zobrist hashing
         hash = zobristHash(board);
         hashExists = hasTableEntry(hash);
-        nextEval, evals = getEntry(hash) if hashExists else minimaxPrune(board, depth - 1, alp, bet);
-        for i in range(STARTING_DEPTH - depth): print("    ", end="");
-        print(f"{evals} = {nextEval} --> {move}");
+        nextEval, nextEvals = getEntry(hash) if hashExists else minimaxPrune(board, depth - 1, alp, bet);
+        if depth > 4:
+            for i in range(STARTING_DEPTH - depth): print("    ", end="");
+            color = "\x1B[38;2;255;0;0m" if board.turn else "\x1B[38;2;0;255;0m"
+            print(f"{color}{nextEvals} = {nextEval} --> {move}\x1B[0m");
 
         # insert into Zobrist hash table
-        if not hashExists:
-            insertEntry(hash, (nextEval, evals));
+        if not hashExists: insertEntry(hash, (nextEval, nextEvals));
         
         # we've found a more delicious move
         if (
-                (board.turn == chess.WHITE and bestEval > nextEval) or
-                (board.turn == chess.BLACK and bestEval < nextEval)
+                (not isPlayerWhite and bestEval > nextEval) or
+                (isPlayerWhite and bestEval < nextEval)
             ):
             bestEval = nextEval;
+            evals = nextEvals;
             if depth == STARTING_DEPTH:
                 bestMove = move;
-                print(f"Setting move {move} --> {evals} = {sum(evals)}");
+                print(f"Natural, setting move {move} --> {evals} = {sum(evals)}");
 
-        if board.turn == chess.WHITE: # not actually black's turn
+        if isPlayerWhite: # not actually black's turn
             alp = max(alp, nextEval);
         else:
             bet = min(bet, nextEval);
@@ -75,7 +78,7 @@ def minimaxPrune(board, depth, alp, bet):
         board.pop();
 
         # if alpha > beta then the move is bad and we prune
-        if alp > bet: break; # snip
+        if alp >= bet: break; # snip
 
     return bestEval, evals;
 
@@ -84,6 +87,8 @@ def callEngine(board):
     global numPositions, bestMove;
     numPositions = 0;
     bestMove = None;
-    eval, evals = minimaxPrune(board, STARTING_DEPTH, -inf, inf);
-    print(f"Engine move made: {str(bestMove)}, {eval, evals} evaluated after {numPositions} positions");
+
+    for currDepth in range(STARTING_DEPTH, STARTING_DEPTH + 1):
+        eval, evals = minimaxPrune(board, currDepth, -inf, inf);
+        print(f"Engine move made: {str(bestMove)}, {eval, evals} evaluated after {numPositions} positions");
     return bestMove;
