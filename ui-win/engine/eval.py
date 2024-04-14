@@ -55,8 +55,8 @@ def captureEval(board):
     toPc = board.piece_at(toSq);
     toVal = 0 if toPc == None else getPcTypeVal(toPc.piece_type);
 
-    # pushes for better trades
-    valDiff = toVal - fromVal;
+    # pushes for better trades, especially with pawns
+    valDiff = toVal - fromVal + 1 if fromPc.piece_type == chess.PAWN else 0;
     enemy = not board.turn;
     board.push(lastMove); # restore
     
@@ -81,7 +81,7 @@ def numCoverSquares(board, sq):
     # pawn is a special case
     if pc.piece_type == chess.PAWN:
         # check for the A and H files, where pawn only covers 1
-        return 2 if chess.square_file(sq) % 7 == 0 else 4;
+        return 1 if chess.square_file(sq) % 7 == 0 else 2;
     
     numCovers = 0;
     for move in board.legal_moves:
@@ -106,25 +106,28 @@ def centreCtrlVal(board, sq):
 
 # calculates all hung pieces for the current state (after move push)
 def hungPcEval(board):
-    multiplier = 1.5; # hanging pieces is bad
+    multiplier = 2; # hanging pieces is bad
     totalEval = 0;
     for sq in chess.SQUARES:
         pc = board.piece_at(sq);
         if pc == None: continue;
         playerPcVal = getPcTypeVal(pc.piece_type);
+        if pc.piece_type == chess.PAWN:
+            playerPcVal /= 2; # not so bad if it's just a pawn
     
         playerTurn = not board.turn;
         enemyTurn = board.turn;
         playerAtkers = board.attackers(enemyTurn, sq);
         enemyAtkers = board.attackers(playerTurn, sq);
+        # find lowest value enemy pc
+        minEnemyPcVal = inf;
+        for sq in enemyAtkers:
+            minEnemyPcVal = min(minEnemyPcVal, getPcTypeVal(board.piece_type_at(sq)));
+        multiplier *= (playerPcVal / minEnemyPcVal); # throwing higher value pieces into lower value is bad
 
         # is attacked by the enemy
         if playerTurn == pc.color and len(enemyAtkers) > 0:
             if len(playerAtkers) > 0: # is defended by our allies
-                # find lowest value enemy pc and see if worthwhile defend
-                minEnemyPcVal = inf;
-                for sq in enemyAtkers:
-                    minEnemyPcVal = min(minEnemyPcVal, getPcTypeVal(board.piece_type_at(sq)));
                 totalEval -= (playerPcVal - minEnemyPcVal) * multiplier;
             else:
                 totalEval -= playerPcVal * multiplier;

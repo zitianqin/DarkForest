@@ -16,7 +16,7 @@ from io import BytesIO
 
 # engine interfacing
 from engine.darkForest import *
-from threading import Thread
+from engine.transTable import *
 
 # to track the current move
 class MoveTracker():
@@ -182,6 +182,7 @@ class Window(Tk):
 				self.board.push(sanCurrM);
 				moveWasMade = True;
 				print("UI move made:", sanCurrM);
+    
 			cM = "";
 		self.cM.set(cM);
 
@@ -192,7 +193,10 @@ class Window(Tk):
 			self.reloadBoard();
 
 if __name__ == "__main__":
-	# initialise window
+	# initialise engine goodies
+    initZobristMap();
+    
+    # initiliase window
     os.system("cls");
     win = Window();
     win.mainloop();
