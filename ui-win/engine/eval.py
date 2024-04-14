@@ -136,7 +136,7 @@ def hungPcEval(board):
                 totalEval -= max((playerPcVal - minEnemyPcVal), 0);
             else:
                 totalEval -= playerPcVal;
-    return totalEval / 4;
+    return totalEval / 3;
 
 # deducts by the number of attackers on square
 def attackedSqEval(board):
@@ -147,7 +147,7 @@ def attackedSqEval(board):
 # combines all evaluations
 tablesInited = False;
 def allEval(board):
-    SCALE = 20;
+    SCALE = 30;
     # transposition table initialise
     global tablesInited;
     if not tablesInited:
@@ -155,13 +155,13 @@ def allEval(board):
         tablesInited = not tablesInited;
     
     lastMoveToSq = board.peek().to_square;
-    v0 = evalPcVal(board);
-    v1 = evalOwnCheck(board);
-    v2 = captureEval(board);
-    v3 = numCoverSquares(board, lastMoveToSq);
-    v4 = centreCtrlVal(board, lastMoveToSq);
-    v5 = hungPcEval(board);
-    v6 = attackedSqEval(board);
+    v0 = round(evalPcVal(board), 2);
+    v1 = round(evalOwnCheck(board), 2);
+    v2 = round(captureEval(board), 2);
+    v3 = round(numCoverSquares(board, lastMoveToSq), 2);
+    v4 = round(centreCtrlVal(board, lastMoveToSq), 2);
+    v5 = round(hungPcEval(board), 2);
+    v6 = round(attackedSqEval(board), 2);
     v7 = round(transEval(board)/SCALE, 2)*(1 if board.turn == chess.WHITE else -1); # just some random scaling down
     totalEval = [v0, v1, v2, v3, v4, v5, v6, v7];
     return sum(totalEval) * (1 if board.turn == chess.WHITE else -1), totalEval;

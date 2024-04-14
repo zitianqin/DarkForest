@@ -12,17 +12,19 @@ bestMove = None;
 
 # minimax algorithm with alpha(max), beta(min) pruning
 def minimaxPrune(board, depth, alp, bet):
+    # terminal node so let's go back
+    if depth == 0: return allEval(board);
+
     # constants
     global numPositions, bestMove;
     bestEval = -inf if board.turn == chess.WHITE else inf;
     legMs = board.legal_moves;
     evals = [];
 
-    # terminal node so let's go back
-    if depth == 0: return allEval(board);
-
     for move in legMs:
+        # temporary push and check that we have a bestMove
         if bestMove == None: bestMove = move;
+        board.push(move);
 
         # we're also gonna track the positions evaluated for debugging speed
         numPositions += 1;
@@ -31,59 +33,49 @@ def minimaxPrune(board, depth, alp, bet):
             if depth == STARTING_DEPTH:
                 bestMove = move;
                 print(f"Setting move {move} --> {evals} = {sum(evals)}");
-            return allEval(board);
-
-        # temporary push and evaluate with Zobrist hashing
-        board.push(move);
-        hash = zobristHash(board);
-        nextEval, evals = getEntry(hash) if hasTableEntry(hash) else minimaxPrune(board, depth - 1, alp, bet);
+            eval = allEval(board);
+            board.pop();
+            return eval;
 
         # if we already find a checkmate
-        if board.is_checkmate():
-            if depth == STARTING_DEPTH:
-                bestMove = move;
-                print(f"Setting move {move} --> {evals} = {sum(evals)}");
-            # if the board is white to move then black is dead and conversely
+        if board.is_checkmate() and depth == STARTING_DEPTH:
             board.pop();
-            if board.turn == chess.WHITE:
-                return inf, [];
-            else:
-                return -inf, [];
-        
-        # this is where all the pruning happens
-        if board.turn == chess.WHITE: # not actually black's turn
-            # prune when the evaluation is less than the alpha
-            # i.e. we've already found a better move for white
-            if nextEval < alp:
-                board.pop();
-                return alp, evals; # snip
-            else:
-                alp = nextEval;
-        else:
-            # prune when the evaluation is greater than the beta
-            # i.e. we've already found a better move for black
-            if nextEval > bet:
-                board.pop();
-                return bet, evals; # snip
-            else:
-                bet = nextEval;
+            bestMove = move;
+            print(f"Setting move {move} --> {evals} = {sum(evals)}");
+            # if the board is black then black is dead
+            return inf if board.turn == chess.BLACK else -inf, [];
+
+        # temporary push and evaluate with Zobrist hashing
+        hash = zobristHash(board);
+        hashExists = hasTableEntry(hash);
+        nextEval, evals = getEntry(hash) if hashExists else minimaxPrune(board, depth - 1, alp, bet);
+        for i in range(STARTING_DEPTH - depth): print("    ", end="");
+        print(f"{evals} = {nextEval} --> {move}");
+
+        # insert into Zobrist hash table
+        if not hashExists:
+            insertEntry(hash, (nextEval, evals));
         
         # we've found a more delicious move
         if (
-                (board.turn == chess.BLACK and bestEval > nextEval) or
-                (board.turn == chess.WHITE and bestEval < nextEval)
+                (board.turn == chess.WHITE and bestEval > nextEval) or
+                (board.turn == chess.BLACK and bestEval < nextEval)
             ):
             bestEval = nextEval;
             if depth == STARTING_DEPTH:
                 bestMove = move;
                 print(f"Setting move {move} --> {evals} = {sum(evals)}");
 
-        # insert into Zobrist hash table
-        if not hasTableEntry(hash):
-            insertEntry(hash, (nextEval, evals));
+        if board.turn == chess.WHITE: # not actually black's turn
+            alp = max(alp, nextEval);
+        else:
+            bet = min(bet, nextEval);
         
         # undo move
         board.pop();
+
+        # if alpha > beta then the move is bad and we prune
+        if alp > bet: break; # snip
 
     return bestEval, evals;
 
