@@ -5,10 +5,12 @@ MAX_64BIT = 0xffffffffffffffff;
 NUM_SQUARES = len(chess.SQUARES);
 NUM_PIECE_TYPES = 12;
 MAX_MAPNUMS = NUM_SQUARES * NUM_PIECE_TYPES;
+MAX_TABLELEN = 0xffffff;
 
 zobristMap = [None] * NUM_SQUARES;
 
 transTable = {};
+tableLen = 0;
 
 # generates a new unique number for the mappings
 mapNums = []; 
@@ -43,7 +45,7 @@ def zobristHash(board):
 
 # we convert the board to a hash and then see if it's in the table
 def hasTableEntry(hash):
-    return hash in list(transTable.keys());
+    return hash in transTable;
 
 # if there's an entry we return it, otherwise 
 def getEntry(hash):
@@ -51,11 +53,15 @@ def getEntry(hash):
 
 # adds an entry to the table
 def insertEntry(hash, eval):
+    global tableLen;
     # limit the number of entries
-    if len(list(transTable.keys())) >= 0xffffff:
-        transTable.pop(list(transTable.keys())[0]);
+    if tableLen >= MAX_TABLELEN:
+        keys = list(transTable.keys());
+        numPop = int(MAX_TABLELEN / 3);
+        for i in range(0, numPop):
+            transTable.pop(keys[i]);
+        tableLen -= numPop;
     
     # insert and return
     transTable[hash] = eval;
-    obj = {hash: eval};
-    return obj;
+    tableLen += 1;

@@ -1,13 +1,6 @@
 import chess
 from math import *
 
-# what do you think this does :)
-def numLegalMoves(board):
-    numM = 0;
-    for move in board.legal_moves:
-        numM += 1;
-    return numM;
-
 # merge sort for move: eval dictionary
 def merge(arr, lo, mid, hi):
     leftLen = mid - lo + 1;
@@ -55,5 +48,5 @@ def orderMovesByGuess(board):
         board.pop();
     
     # merge sort
-    mergeSort(list(orderedMoves.items()), 0, numLegalMoves(board));
+    mergeSort(list(orderedMoves.items()), 0, board.legal_moves.count());
     return list(orderedMoves.keys());

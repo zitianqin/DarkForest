@@ -15,9 +15,10 @@ def minimaxPrune(board, depth, alp, bet):
     
     # iterate
     global numPositions, bestMove;
-    for move in board.legal_moves:
-        # not a very hard decision, my guy and also think less if there's less moves to make
-        if numLegalMoves(board) == 1:
+    legMs = board.legal_moves;
+    for move in legMs:
+        # not a very hard decision, my guy
+        if legMs.count() == 1:
             if depth == STARTING_DEPTH:
                 bestMove = move;
             return allEval(board);
@@ -27,26 +28,25 @@ def minimaxPrune(board, depth, alp, bet):
         board.push(move);
 
         # if we already find a checkmate
-        if board.is_checkmate() and depth == STARTING_DEPTH:
+        if board.is_checkmate():
+            if depth == STARTING_DEPTH:
+                bestMove = move;
             board.pop();
-            bestMove = move;
             return inf;
 
         # evaluate with Zobrist hashing
         hash = zobristHash(board);
         nextEval = -inf;
         if hasTableEntry(hash):
-            print("is this ", end="");
             nextEval= getEntry(hash);
-            print("slow??");
         else:
-            nextEval = -round(minimaxPrune(board, depth - 1, -bet, -alp), 4);
+            nextEval = -round(minimaxPrune(board, depth - 1, -bet, -alp), 2);
         
         # pruning 
         if alp < nextEval:
             # check that we have a best move
             if depth == STARTING_DEPTH or bestMove == None:
-                print("here we are", str(move));
+                print("Setting best move:", str(move));
                 bestMove = move;
             alp = nextEval;
         board.pop();

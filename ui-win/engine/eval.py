@@ -15,7 +15,7 @@ def evalOwnCheck(board):
 
 # evaluates a board from just the pieces on board
 values = {
-    chess.PAWN: 1, 
+    chess.PAWN: 1,
     chess.KING: 0, 
     chess.QUEEN: 10,
     chess.BISHOP: 3, 
@@ -106,7 +106,7 @@ def centreCtrlVal(board, sq):
 
 # calculates all hung pieces for the current state (after move push)
 def hungPcEval(board):
-    multiplier = 2; # hanging pieces is bad
+    multiplier = 5; # hanging pieces is bad
     totalEval = 0;
     for sq in chess.SQUARES:
         pc = board.piece_at(sq);
@@ -119,10 +119,11 @@ def hungPcEval(board):
         enemyTurn = board.turn;
         playerAtkers = board.attackers(enemyTurn, sq);
         enemyAtkers = board.attackers(playerTurn, sq);
+        
         # find lowest value enemy pc
-        minEnemyPcVal = inf;
+        minEnemyPcVal = 10;
         for sq in enemyAtkers:
-            minEnemyPcVal = min(minEnemyPcVal, getPcTypeVal(board.piece_type_at(sq)));
+            minEnemyPcVal = max(min(minEnemyPcVal, getPcTypeVal(board.piece_type_at(sq))), 1);
         multiplier *= (playerPcVal / minEnemyPcVal); # throwing higher value pieces into lower value is bad
 
         # is attacked by the enemy
@@ -155,8 +156,8 @@ def allEval(board):
     v2 = captureEval(board);
     v3 = numCoverSquares(board, lastMoveToSq);
     v4 = centreCtrlVal(board, lastMoveToSq);
-    v5 = transEval(board) / 100; # just some random scaling down
+    v5 = transEval(board); # just some random scaling down
     v6 = hungPcEval(board);
     v7 = attackedSqEval(board);
-    totalEval = v0 + v1 + v2 + v3 + v4 + v5 + v6 + v7;
+    totalEval = int((v0 + v1 + v2 + v3 + v4 + v5 + v6) * 70) + v7;
     return totalEval;
