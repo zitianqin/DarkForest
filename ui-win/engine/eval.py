@@ -5,11 +5,11 @@ from .pieceMapping import *
 # evaluates a board from just the pieces on board
 values = {
     chess.PAWN: 100,
-    chess.KING: 310, 
+    chess.KNIGHT: 310,
+    chess.BISHOP: 340,
+    chess.ROOK: 500,
     chess.QUEEN: 900,
-    chess.BISHOP: 340, 
-    chess.KNIGHT: 310, 
-    chess.ROOK: 500
+    chess.KING: 310,
 };
 def evalPcVal(board):
     # white and black eval
@@ -19,25 +19,25 @@ def evalPcVal(board):
         pc = board.piece_at(sq);
         if pc == None: continue;
         pType = pc.piece_type;
-        if pc.color:
+        if pc.color == chess.WHITE:
             whiteEval += values[pType];
         else:
             blackEval += values[pType];
 
     return (whiteEval - blackEval);
 
-# evaluate for own checkmate and checks
-def evalOwnCheck(board):
+# evaluate for checkmate and checks
+def evalChecks(board):
     singleVal = 100;
 
-    # checkmate is very very bad
     if board.is_checkmate():
+        # checkmate is very very bad
         return -inf*(1 if board.turn == chess.WHITE else -1);
-    
-    # checks
-    if board.is_check():
-        return len(board.checkers())*singleVal*(1 if board.turn == chess.WHITE else -1);
-    return 0;
+    elif board.is_check():
+        # checks
+        return -len(board.checkers())*singleVal*(1 if board.turn == chess.BLACK else -1);
+    else:
+        return 0;
 
 # adds value for centre control
 def centreCtrlVal(board):
@@ -45,9 +45,9 @@ def centreCtrlVal(board):
     numEGMoves = 24;
     numMovesPlayed = len(board.move_stack);
     if not (numMovesPlayed <= numEGMoves): return 0;
-    scale = (numEGMoves - numMovesPlayed)/numEGMoves; # first 24 moves count as early game
+    scale = (numEGMoves - numMovesPlayed + 1)/numEGMoves; # first 24 moves count as early game
 
-    singleVal = 120;
+    singleVal = 100;
     centreSquares = [chess.D4, chess.E4, chess.D5, chess.E5];
 
     enemyTurn = board.turn;
@@ -74,7 +74,7 @@ def centreCtrlVal(board):
                 else: # if board.piece_at(sq).color == enemyTurn
                     enemyVal += singleVal*2;
 
-    return (playerVal - enemyVal)*(-1 if playerTurn == chess.WHITE else 1)*scale;
+    return (playerVal - enemyVal)*(1 if playerTurn == chess.WHITE else -1)*scale;
 
 # combines all evaluations
 tablesInited = False;
@@ -86,9 +86,9 @@ def allEval(board):
         tablesInited = not tablesInited;
     
     v0 = round(evalPcVal(board), 2);
-    v1 = round(evalOwnCheck(board), 2);
+    v1 = round(evalChecks(board), 2);
     v2 = round(centreCtrlVal(board), 2);
     v3 = round(transEval(board), 2); # just some random scaling down
     totalEvals = [v0, v1, v2, v3];
     totalEval = round(sum(totalEvals), 2); # icky bicky
-    return totalEval, totalEvals;
+    return 0 if board.is_stalemate() else totalEval, totalEvals;

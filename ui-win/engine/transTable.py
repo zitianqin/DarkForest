@@ -65,3 +65,8 @@ def insertEntry(hash, eval):
     # insert and return
     transTable[hash] = eval;
     tableLen += 1;
+
+# completely wipes the table
+def clearTable():
+    global transTable;
+    transTable = {};

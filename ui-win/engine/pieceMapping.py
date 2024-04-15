@@ -192,7 +192,7 @@ def initTables():
     global mgTable, egTable;
     pc = 0;
     for pType in list(pcs.values()):
-        for sq in range(64):
+        for sq in chess.SQUARES:
             mgTable[pc]  [sq] = mgVal[pType] + mgAllTable[pType][sq];
             egTable[pc]  [sq] = egVal[pType] + egAllTable[pType][sq];
             mgTable[pc+1][sq] = mgVal[pType] + mgAllTable[pType][sq ^ 56];
@@ -209,7 +209,7 @@ def transEval(board):
     eg[cols[chess.BLACK]] = 0;
 
     # evaluate each piece
-    for sq in range(64):
+    for sq in chess.SQUARES:
         pc = board.piece_at(sq);
         if (pc == None): continue;
         pType = pc.piece_type;
@@ -221,8 +221,8 @@ def transEval(board):
         gamePhase += gamephaseInc[index];
 
     # tapered evaluation
-    mgScore = mg[board.turn] - mg[not board.turn];
-    egScore = eg[board.turn] - eg[not board.turn];
+    mgScore = mg[board.turn != chess.WHITE] - mg[board.turn != chess.BLACK];
+    egScore = eg[board.turn != chess.WHITE] - eg[board.turn != chess.BLACK];
     mgPhase = gamePhase;
     mgPhase = min(mgPhase, 24); # in case of early promotion
     egPhase = 24 - mgPhase;
