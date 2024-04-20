@@ -6,7 +6,7 @@ from .transTable import *
 from .moveOrdering import *
 from contextlib import redirect_stdout
 
-STARTING_DEPTH = 5;
+STARTING_DEPTH = 4;
 
 # evaluates a position recursively and return best move with evaluation
 numPositions = 0;
@@ -57,7 +57,7 @@ def minimaxPrune(board, depth, ext, alp, bet):
         hash = board.zobrist.getHash(board);
         hashExists = board.zobrist.hasHash(hash);
         nextEval, nextEvals = board.zobrist.getEntry(hash) if hashExists else minimaxPrune(board, depth - 1, nextExt, alp, bet);
-        if depth >= 100:
+        if depth >= 3:
             for i in range(STARTING_DEPTH - (depth + ext)): print("    ", end="");
             # color = "\x1B[38;2;255;0;0m" if board.turn else "\x1B[38;2;0;255;0m"
             print("White" if isPlayerWhite else "Black", end="");
@@ -86,7 +86,9 @@ def minimaxPrune(board, depth, ext, alp, bet):
         board.pop();
 
         # if alpha > beta then the move is bad and we prune
-        if alp > bet: break; # snip
+        if alp > bet:
+            print(f"Pruning bad move, {move} with scores (a, b) = ({alp}, {bet})");
+            break; # snip
 
     return bestEval, evals;
 
@@ -95,11 +97,11 @@ def callEngine(board):
     global numPositions, bestMove;
     numPositions = 0;
     
-    # debugFile = open("debug.txt", "w+");
-    # with redirect_stdout(debugFile):
-    for currDepth in range(STARTING_DEPTH, STARTING_DEPTH + 1):
-        bestMove = None;
-        eval, evals = minimaxPrune(board, currDepth, 0, -inf, inf);
-        print(f"Engine move made: {str(bestMove)}, {eval, evals} evaluated after {numPositions} positions");
-    # debugFile.close();
+    debugFile = open("debug.txt", "w+");
+    with redirect_stdout(debugFile):
+        for currDepth in range(STARTING_DEPTH, STARTING_DEPTH + 1):
+            bestMove = None;
+            eval, evals = minimaxPrune(board, currDepth, 0, -inf, inf);
+            print(f"Engine move made: {str(bestMove)}, {eval, evals} evaluated after {numPositions} positions");
+    debugFile.close();
     return bestMove;
