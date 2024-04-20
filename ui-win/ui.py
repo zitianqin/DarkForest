@@ -104,9 +104,12 @@ class Window(Tk):
 		# construct board reset button
 		self.resetBoardBtn = SpecBtn(self.btns, "Reset", lambda event: self.board.resetWrapper(self));
 
-		# construct buttons that toggles calls from engine's FEN output
+		# construct button that toggles calls from engine's FEN output
 		self.engineBtn = SpecBtn(self.btns, "Start engine", lambda event: self.toggleEngine(self.engineBtn));
 		self.engineOn = False;
+  
+		# construct button that sets FEN
+		self.setFenBtn = SpecBtn(self.btns, "Set FEN board state\n(CAREFUL)", lambda event: self.readSetFen());
 
 	def reloadBoard(self):
 		# grab, open display and resize to viewport
@@ -127,6 +130,11 @@ class Window(Tk):
 		btn.config(image=PhotoImage(), text=(stopText if isStartInnerText else startText));
 		print(f"Engine {"starting" if isStartInnerText else "stopping"}");
 		self.engineOn = not self.engineOn;
+
+	def readSetFen(self):
+		with open("fenRead.txt", "r+") as file:
+			self.board.set_fen(file.readline());
+		self.reloadBoard();
 
 	# handles the clicking of a piece, this is where moves are made
 	def handleClick(self, event):

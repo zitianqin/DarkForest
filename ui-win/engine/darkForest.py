@@ -3,9 +3,10 @@ from math import *
 from .helpers import *
 from .eval import *
 from .transTable import *
+from .moveOrdering import *
 from contextlib import redirect_stdout
 
-STARTING_DEPTH = 3;
+STARTING_DEPTH = 5;
 
 # evaluates a position recursively and return best move with evaluation
 numPositions = 0;
@@ -20,22 +21,22 @@ def minimaxPrune(board, depth, ext, alp, bet):
     global numPositions, bestMove;
     isPlayerWhite = board.turn;
     bestEval = -inf if isPlayerWhite else inf;
-    legMs = board.legal_moves;
+    orderedMoves = getOrderedMoves(board);
+    numMoves = len(orderedMoves);
     evals = [];
 
-    for move in legMs:
+    for move in orderedMoves:
         # temporary push and check that we have a bestMove
         if bestMove == None: bestMove = move;
         board.push(move);
         
-        ext = 0;
-        # if board.is_check(): ext += 1; # simple search extension
+        nextExt = 1 if (board.is_check() and ext == 0) else 0;
 
         # we're also gonna track the positions evaluated for debugging speed
         numPositions += 1;
         
         # not a very hard decision, my guy
-        if legMs.count() == 1 and depth == STARTING_DEPTH:
+        if numMoves == 1 and depth == STARTING_DEPTH:
             bestMove = move;
             eval, evals = allEval(board);
             print(f"Only move, setting move {move} --> {evals} = {sum(evals)}");
@@ -43,7 +44,7 @@ def minimaxPrune(board, depth, ext, alp, bet):
             return eval, evals;
 
         # if we find a terminal node
-        if legMs.count() == 0:
+        if numMoves == 0:
             board.pop();
             # checkmate is not fun
             if board.is_check():
@@ -55,8 +56,8 @@ def minimaxPrune(board, depth, ext, alp, bet):
         # evaluate with Zobrist hashing
         hash = board.zobrist.getHash(board);
         hashExists = board.zobrist.hasHash(hash);
-        nextEval, nextEvals = board.zobrist.getEntry(hash) if hashExists else minimaxPrune(board, depth - 1, 0, alp, bet);
-        if depth >= 0:
+        nextEval, nextEvals = board.zobrist.getEntry(hash) if hashExists else minimaxPrune(board, depth - 1, nextExt, alp, bet);
+        if depth >= 100:
             for i in range(STARTING_DEPTH - (depth + ext)): print("    ", end="");
             # color = "\x1B[38;2;255;0;0m" if board.turn else "\x1B[38;2;0;255;0m"
             print("White" if isPlayerWhite else "Black", end="");
@@ -94,11 +95,11 @@ def callEngine(board):
     global numPositions, bestMove;
     numPositions = 0;
     
-    debugFile = open("debug.txt", "w+");
-    with redirect_stdout(debugFile):
-        for currDepth in range(STARTING_DEPTH, STARTING_DEPTH + 1):
-            bestMove = None;
-            eval, evals = minimaxPrune(board, currDepth, 0, -inf, inf);
-            print(f"Engine move made: {str(bestMove)}, {eval, evals} evaluated after {numPositions} positions");
-    debugFile.close();
+    # debugFile = open("debug.txt", "w+");
+    # with redirect_stdout(debugFile):
+    for currDepth in range(STARTING_DEPTH, STARTING_DEPTH + 1):
+        bestMove = None;
+        eval, evals = minimaxPrune(board, currDepth, 0, -inf, inf);
+        print(f"Engine move made: {str(bestMove)}, {eval, evals} evaluated after {numPositions} positions");
+    # debugFile.close();
     return bestMove;

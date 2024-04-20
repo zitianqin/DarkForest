@@ -89,7 +89,7 @@ def allEval(board):
     v0 = round(evalPcVal(board), 2);
     v1 = round(evalChecks(board), 2);
     # v2 = round(centreCtrlVal(board), 2);
-    v3 = round(transEval(board), 2); # just some random scaling down
-    totalEvals = [v0, v1, v3];
+    # v3 = round(transEval(board), 2);
+    totalEvals = [v0, v1];
     totalEval = round(sum(totalEvals), 2); # icky bicky
     return 0 if board.is_stalemate() else totalEval, totalEvals;

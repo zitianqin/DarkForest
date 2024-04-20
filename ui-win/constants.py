@@ -16,6 +16,6 @@ CHECKMATE_COL = "#aa1111";
 STALEMATE_COL = "#999999";
 
 # standard widget dimensions
-NUM_BTNS = 2;
+NUM_BTNS = 3;
 BTN_HEIGHT = 50;
 BTN_WIDTH = int(winS / NUM_BTNS);
