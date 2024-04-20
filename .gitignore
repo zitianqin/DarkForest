@@ -5,3 +5,4 @@ ui-win/engine/test.py
 ui-win/__pycache__/
 main.exe
 ui-win/buff.png
+ui-win/debug.txt
