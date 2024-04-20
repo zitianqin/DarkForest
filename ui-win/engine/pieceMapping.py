@@ -216,15 +216,21 @@ def transEval(board):
         col = pc.color;
 
         index = 2*(pType - 1) + (0 if col == chess.WHITE else 1);
-        mg[0 if col == chess.WHITE else 1] += mgTable[index][sq];
-        eg[0 if col == chess.WHITE else 1] += egTable[index][sq];
+        mg[index & 1] += mgTable[index][sq];
+        eg[index & 1] += egTable[index][sq];
         gamePhase += gamephaseInc[index];
 
     # tapered evaluation
-    mgScore = mg[board.turn != chess.WHITE] - mg[board.turn != chess.BLACK];
-    egScore = eg[board.turn != chess.WHITE] - eg[board.turn != chess.BLACK];
+    mgScore = mg[board.turn] - mg[not board.turn];
+    egScore = eg[board.turn] - eg[not board.turn];
     mgPhase = gamePhase;
     mgPhase = min(mgPhase, 24); # in case of early promotion
     egPhase = 24 - mgPhase;
     val = (mgScore * mgPhase + egScore * egPhase) / 24;
-    return val;
+    
+    # adjusting to equilibrium
+    equilVal = 448;
+    isBLack = val < 0;
+    val *= -1 if isBLack else 1;
+    val -= equilVal;
+    return val*(-1 if isBLack else 1);

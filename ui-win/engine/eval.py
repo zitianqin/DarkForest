@@ -47,7 +47,7 @@ def centreCtrlVal(board):
     if not (numMovesPlayed <= numEGMoves): return 0;
     scale = (numEGMoves - numMovesPlayed + 1)/numEGMoves; # first 24 moves count as early game
 
-    singleVal = 100;
+    singleVal = 50;
     centreSquares = [chess.D4, chess.E4, chess.D5, chess.E5];
 
     enemyTurn = board.turn;
@@ -70,9 +70,9 @@ def centreCtrlVal(board):
             # early game pawn control is good
             if pc.piece_type == chess.PAWN:
                 if board.color_at(sq) == playerTurn:
-                    playerVal += singleVal*2;
+                    playerVal += singleVal*1.5;
                 else: # if board.piece_at(sq).color == enemyTurn
-                    enemyVal += singleVal*2;
+                    enemyVal += singleVal*1.5;
 
     return (playerVal - enemyVal)*(1 if playerTurn == chess.WHITE else -1)*scale;
 
