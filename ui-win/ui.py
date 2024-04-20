@@ -40,6 +40,9 @@ class SpecBtn(Button):
 class Board(chess.Board):
 	def __init__(self):
 		super().__init__();
+  
+		# initialise Zobrist
+		self.zobrist = Zobrist();
 		
 	def writeDisplayPng(self, cM):
 		# compute all the colourings
@@ -176,10 +179,7 @@ class Window(Tk):
 			else:
 				print("Invalid engine move:", move);
 
-if __name__ == "__main__":
-	# initialise engine goodies
-    initZobristMap();
-    
+if __name__ == "__main__":    
     # initiliase window
     os.system("cls");
     win = Window();

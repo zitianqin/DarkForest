@@ -1,6 +1,10 @@
 import chess
 from math import *
 
+# if white then positive, if black then negative
+def perspective(board):
+    return (1 if board.turn else -1);
+
 # merge sort for move: eval dictionary
 def merge(arr, lo, mid, hi):
     leftLen = mid - lo + 1;

@@ -1,6 +1,7 @@
 import chess
 from math import *
 from .pieceMapping import *
+from .helpers import *
 
 # evaluates a board from just the pieces on board
 values = {
@@ -28,14 +29,14 @@ def evalPcVal(board):
 
 # evaluate for checkmate and checks
 def evalChecks(board):
-    singleVal = 100;
+    singleVal = 50;
 
     if board.is_checkmate():
         # checkmate is very very bad
         return -inf*(1 if board.turn == chess.WHITE else -1);
     elif board.is_check():
         # checks
-        return -len(board.checkers())*singleVal*(1 if board.turn == chess.BLACK else -1);
+        return -len(board.checkers())*singleVal*perspective(board);
     else:
         return 0;
 
@@ -74,7 +75,7 @@ def centreCtrlVal(board):
                 else: # if board.piece_at(sq).color == enemyTurn
                     enemyVal += singleVal*1.5;
 
-    return (playerVal - enemyVal)*(1 if playerTurn == chess.WHITE else -1)*scale;
+    return (playerVal - enemyVal)*perspective(board)*scale;
 
 # combines all evaluations
 tablesInited = False;
@@ -87,8 +88,8 @@ def allEval(board):
     
     v0 = round(evalPcVal(board), 2);
     v1 = round(evalChecks(board), 2);
-    v2 = round(centreCtrlVal(board), 2);
+    # v2 = round(centreCtrlVal(board), 2);
     v3 = round(transEval(board), 2); # just some random scaling down
-    totalEvals = [v0, v1, v2, v3];
+    totalEvals = [v0, v1, v3];
     totalEval = round(sum(totalEvals), 2); # icky bicky
     return 0 if board.is_stalemate() else totalEval, totalEvals;

@@ -5,7 +5,7 @@ from .eval import *
 from .transTable import *
 from contextlib import redirect_stdout
 
-STARTING_DEPTH = 6;
+STARTING_DEPTH = 3;
 
 # evaluates a position recursively and return best move with evaluation
 numPositions = 0;
@@ -22,7 +22,6 @@ def minimaxPrune(board, depth, ext, alp, bet):
     bestEval = -inf if isPlayerWhite else inf;
     legMs = board.legal_moves;
     evals = [];
-    newPcVal = 0;
 
     for move in legMs:
         # temporary push and check that we have a bestMove
@@ -49,23 +48,22 @@ def minimaxPrune(board, depth, ext, alp, bet):
             # checkmate is not fun
             if board.is_check():
                 # if the board is black to move then black killed white
-                return -inf if not isPlayerWhite else inf, evals;
+                return inf*perspective(board), evals;
             else: # board is stalemate
                 return 0, evals;
         
         # evaluate with Zobrist hashing
-        hash = zobristHash(board);
-        hashExists = hasTableEntry(hash);
-        nextEval, nextEvals = getEntry(hash) if hashExists else minimaxPrune(board, depth - 1, 0, alp, bet);
-        if depth >= 0: # and len(nextEvals) > 0 and (newPcVal != nextEvals[0]):
-            # newPcVal = nextEvals[0];
+        hash = board.zobrist.getHash(board);
+        hashExists = board.zobrist.hasHash(hash);
+        nextEval, nextEvals = board.zobrist.getEntry(hash) if hashExists else minimaxPrune(board, depth - 1, 0, alp, bet);
+        if depth >= 0:
             for i in range(STARTING_DEPTH - (depth + ext)): print("    ", end="");
             # color = "\x1B[38;2;255;0;0m" if board.turn else "\x1B[38;2;0;255;0m"
             print("White" if isPlayerWhite else "Black", end="");
             print(f"{nextEvals} = {nextEval} --> {move}");# \x1B[0m");
 
         # insert into Zobrist hash table
-        # if not hashExists: insertEntry(hash, (nextEval, nextEvals));
+        # if not hashExists: board.zobrist.insertEntry(hash, [nextEval, nextEvals]);
         
         # we've found a more delicious move
         if (
