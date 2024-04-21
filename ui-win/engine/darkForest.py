@@ -6,14 +6,14 @@ from .transTable import *
 from .moveOrdering import *
 from contextlib import redirect_stdout
 
-STARTING_DEPTH = 4;
+STARTING_DEPTH = 3;
 
 # evaluates a position recursively and return best move with evaluation
 numPositions = 0;
 bestMove = None;
 
 # minimax algorithm with alpha(max), beta(min) pruning
-def minimaxPrune(board, depth, ext, alp, bet):
+def minimaxPrune(board, depth, ext, alp, bet, debugging):
     # terminal node so let's go back
     if depth == 0: return allEval(board);
 
@@ -39,7 +39,7 @@ def minimaxPrune(board, depth, ext, alp, bet):
         if numMoves == 1 and depth == STARTING_DEPTH:
             bestMove = move;
             eval, evals = allEval(board);
-            print(f"Only move, setting move {move} --> {evals} = {sum(evals)}");
+            if debugging: print(f"Only move, setting move {move} --> {evals} = {sum(evals)}");
             board.pop();
             return eval, evals;
 
@@ -56,14 +56,18 @@ def minimaxPrune(board, depth, ext, alp, bet):
         # evaluate with Zobrist hashing
         hash = board.zobrist.getHash(board);
         hashExists = board.zobrist.hasHash(hash);
-        nextEval, nextEvals = board.zobrist.getEntry(hash) if hashExists else minimaxPrune(board, depth - 1, nextExt, alp, bet);
-        if depth >= 3:
+        if hashExists:
+            if debugging: print(f"Found hash: {hex(hash)} with {move}");
+            nextEval, nextEvals = board.zobrist.getEntry(hash);
+        else:
+            nextEval, nextEvals = minimaxPrune(board, depth - 1, nextExt, alp, bet, debugging);
+        if debugging and depth >= 0:
             for i in range(STARTING_DEPTH - (depth + ext)): print("    ", end="");
             # color = "\x1B[38;2;255;0;0m" if board.turn else "\x1B[38;2;0;255;0m"
             print("White" if isPlayerWhite else "Black", end="");
             print(f"{nextEvals} = {nextEval} --> {move}");# \x1B[0m");
 
-        # insert into Zobrist hash table
+        # insert into Zobrist hash table (BROKEN)
         # if not hashExists: board.zobrist.insertEntry(hash, [nextEval, nextEvals]);
         
         # we've found a more delicious move
@@ -75,7 +79,7 @@ def minimaxPrune(board, depth, ext, alp, bet):
             evals = nextEvals;
             if depth == STARTING_DEPTH:
                 bestMove = move;
-                print(f"Natural, setting move {move} --> {evals} = {sum(evals)}");
+                if debugging: print(f"Natural, setting move {move} --> {evals} = {sum(evals)}");
 
         if isPlayerWhite:
             alp = max(alp, bestEval);
@@ -87,21 +91,22 @@ def minimaxPrune(board, depth, ext, alp, bet):
 
         # if alpha > beta then the move is bad and we prune
         if alp > bet:
-            print(f"Pruning bad move, {move} with scores (a, b) = ({alp}, {bet})");
+            # if debugging: print(f"Pruning bad move, {move} with scores (a, b) = ({alp}, {bet})");
             break; # snip
 
     return bestEval, evals;
 
-def callEngine(board):
+def callEngine(board, debugging):
     # go next
     global numPositions, bestMove;
     numPositions = 0;
     
-    debugFile = open("debug.txt", "w+");
-    with redirect_stdout(debugFile):
-        for currDepth in range(STARTING_DEPTH, STARTING_DEPTH + 1):
-            bestMove = None;
-            eval, evals = minimaxPrune(board, currDepth, 0, -inf, inf);
-            print(f"Engine move made: {str(bestMove)}, {eval, evals} evaluated after {numPositions} positions");
-    debugFile.close();
+    # debugFile = open("debug.txt", "w+");
+    # with redirect_stdout(debugFile):
+    for currDepth in range(STARTING_DEPTH, STARTING_DEPTH + 1):
+        bestMove = None;
+        eval, evals = minimaxPrune(board, currDepth, 0, -inf, inf, debugging);
+        if debugging: print(f"Engine move made: {str(bestMove)}, {eval, evals} evaluated after {numPositions} positions");
+    # debugFile.close();
+    if debugging:  print("Table fill:", board.zobrist.numEntries);
     return bestMove;

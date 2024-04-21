@@ -6,3 +6,5 @@ ui-win/__pycache__/
 main.exe
 ui-win/buff.png
 ui-win/debug.txt
+ui-win/build/ui/
+ui-win/ui.spec

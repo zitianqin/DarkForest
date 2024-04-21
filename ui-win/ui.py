@@ -1,4 +1,3 @@
-import os
 from math import *
 from constants import *
 from helpers import *
@@ -83,7 +82,7 @@ class Window(Tk):
 		self.config(bg=WIN_BG_COL); # for some reason no work
 		self.wm_attributes("-transparentcolor", WIN_BG_COL);
 		self.resizable(False, False); # for some reason no work
-		self.geometry(str(winS) + "x" + str(winS + BTN_HEIGHT));
+		self.geometry(str(winS) + "x" + str(winS + BTN_HEIGHT*2));
 		
 		# construct the display label
 		self.label = Label(self, width=winS, height=winS);
@@ -108,8 +107,16 @@ class Window(Tk):
 		self.engineBtn = SpecBtn(self.btns, "Start engine", lambda event: self.toggleEngine(self.engineBtn));
 		self.engineOn = False;
   
+		# option to turn off all debug text
+		self.debugging = True;
+		self.toggleDebugBtn = SpecBtn(self.btns, "Toggle debug off", lambda event: self.toggleDebug());
+  
 		# construct button that sets FEN
-		self.setFenBtn = SpecBtn(self.btns, "Set FEN board state\n(CAREFUL)", lambda event: self.readSetFen());
+		self.setFenBtn = SpecBtn(self, "Set FEN board state", lambda event: self.readSetFen());
+		
+		# entry for FEN input
+		self.fenInput = Entry(self, width=winS);
+		self.fenInput.pack();
 
 	def reloadBoard(self):
 		# grab, open display and resize to viewport
@@ -131,9 +138,13 @@ class Window(Tk):
 		print(f"Engine {"starting" if isStartInnerText else "stopping"}");
 		self.engineOn = not self.engineOn;
 
+	def toggleDebug(self):
+		if self.debugging:
+			self.toggleDebugBtn.config(image=PhotoImage(), text=("Toggle debug on" if self.debugging else "Toggle debug off"));
+		self.debugging = not self.debugging;
+
 	def readSetFen(self):
-		with open("fenRead.txt", "r+") as file:
-			self.board.set_fen(file.readline());
+		self.board.set_fen(self.fenInput.get());
 		self.reloadBoard();
 
 	# handles the clicking of a piece, this is where moves are made
@@ -178,7 +189,7 @@ class Window(Tk):
 
 		self.reloadBoard(); # reload the board after the move
 		if moveWasMade and self.engineOn: # engine
-			move = callEngine(self.board);
+			move = callEngine(self.board, self.debugging);
 			if move == None: # termination occurred
 				print("Good game");
 			elif move in self.board.legal_moves:
@@ -189,6 +200,5 @@ class Window(Tk):
 
 if __name__ == "__main__":    
     # initiliase window
-    os.system("cls");
     win = Window();
     win.mainloop();
