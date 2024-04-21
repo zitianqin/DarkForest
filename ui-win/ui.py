@@ -1,4 +1,3 @@
-import os
 from math import *
 from constants import *
 from helpers import *
@@ -40,6 +39,9 @@ class SpecBtn(Button):
 class Board(chess.Board):
 	def __init__(self):
 		super().__init__();
+  
+		# initialise Zobrist
+		self.zobrist = Zobrist();
 		
 	def writeDisplayPng(self, cM):
 		# compute all the colourings
@@ -80,7 +82,7 @@ class Window(Tk):
 		self.config(bg=WIN_BG_COL); # for some reason no work
 		self.wm_attributes("-transparentcolor", WIN_BG_COL);
 		self.resizable(False, False); # for some reason no work
-		self.geometry(str(winS) + "x" + str(winS + BTN_HEIGHT));
+		self.geometry(str(winS) + "x" + str(winS + BTN_HEIGHT*2));
 		
 		# construct the display label
 		self.label = Label(self, width=winS, height=winS);
@@ -101,9 +103,20 @@ class Window(Tk):
 		# construct board reset button
 		self.resetBoardBtn = SpecBtn(self.btns, "Reset", lambda event: self.board.resetWrapper(self));
 
-		# construct buttons that toggles calls from engine's FEN output
+		# construct button that toggles calls from engine's FEN output
 		self.engineBtn = SpecBtn(self.btns, "Start engine", lambda event: self.toggleEngine(self.engineBtn));
 		self.engineOn = False;
+  
+		# option to turn off all debug text
+		self.debugging = True;
+		self.toggleDebugBtn = SpecBtn(self.btns, "Toggle debug off", lambda event: self.toggleDebug());
+  
+		# construct button that sets FEN
+		self.setFenBtn = SpecBtn(self, "Set FEN board state", lambda event: self.readSetFen());
+		
+		# entry for FEN input
+		self.fenInput = Entry(self, width=winS);
+		self.fenInput.pack();
 
 	def reloadBoard(self):
 		# grab, open display and resize to viewport
@@ -124,6 +137,15 @@ class Window(Tk):
 		btn.config(image=PhotoImage(), text=(stopText if isStartInnerText else startText));
 		print(f"Engine {"starting" if isStartInnerText else "stopping"}");
 		self.engineOn = not self.engineOn;
+
+	def toggleDebug(self):
+		if self.debugging:
+			self.toggleDebugBtn.config(image=PhotoImage(), text=("Toggle debug on" if self.debugging else "Toggle debug off"));
+		self.debugging = not self.debugging;
+
+	def readSetFen(self):
+		self.board.set_fen(self.fenInput.get());
+		self.reloadBoard();
 
 	# handles the clicking of a piece, this is where moves are made
 	def handleClick(self, event):
@@ -167,7 +189,7 @@ class Window(Tk):
 
 		self.reloadBoard(); # reload the board after the move
 		if moveWasMade and self.engineOn: # engine
-			move = callEngine(self.board);
+			move = callEngine(self.board, self.debugging);
 			if move == None: # termination occurred
 				print("Good game");
 			elif move in self.board.legal_moves:
@@ -176,11 +198,7 @@ class Window(Tk):
 			else:
 				print("Invalid engine move:", move);
 
-if __name__ == "__main__":
-	# initialise engine goodies
-    initZobristMap();
-    
+if __name__ == "__main__":    
     # initiliase window
-    os.system("cls");
     win = Window();
     win.mainloop();

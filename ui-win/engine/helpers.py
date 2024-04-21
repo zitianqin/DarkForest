@@ -1,6 +1,10 @@
 import chess
 from math import *
 
+# if white then positive, if black then negative
+def perspective(board):
+    return (1 if board.turn else -1);
+
 # merge sort for move: eval dictionary
 def merge(arr, lo, mid, hi):
     leftLen = mid - lo + 1;
@@ -30,23 +34,11 @@ def merge(arr, lo, mid, hi):
         arr[k] = right[j];
         j += 1;
         k += 1;
+
 def mergeSort(arr, lo, hi):
     if lo < hi:
         mid = int(floor((lo + hi)/2));
         mergeSort(arr, lo, mid);
         mergeSort(arr, mid + 1, hi);
         merge(arr, lo, mid, hi);
-
-# evaluate first and orders the board's list of legal moves to shorten the search
-def orderMovesByGuess(board):
-    return board.legal_moves;
-    orderedMoves = {};
-    legalMoves= board.legal_moves;
-    for move in legalMoves:
-        board.push(move);
-        orderedMoves[move] = allEval(board);
-        board.pop();
-    
-    # merge sort
-    mergeSort(list(orderedMoves.items()), 0, board.legal_moves.count());
-    return list(orderedMoves.keys());
+    return arr;

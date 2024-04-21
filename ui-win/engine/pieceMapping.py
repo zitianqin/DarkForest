@@ -192,7 +192,7 @@ def initTables():
     global mgTable, egTable;
     pc = 0;
     for pType in list(pcs.values()):
-        for sq in range(64):
+        for sq in chess.SQUARES:
             mgTable[pc]  [sq] = mgVal[pType] + mgAllTable[pType][sq];
             egTable[pc]  [sq] = egVal[pType] + egAllTable[pType][sq];
             mgTable[pc+1][sq] = mgVal[pType] + mgAllTable[pType][sq ^ 56];
@@ -209,15 +209,15 @@ def transEval(board):
     eg[cols[chess.BLACK]] = 0;
 
     # evaluate each piece
-    for sq in range(64):
+    for sq in chess.SQUARES:
         pc = board.piece_at(sq);
         if (pc == None): continue;
         pType = pc.piece_type;
         col = pc.color;
 
         index = 2*(pType - 1) + (0 if col == chess.WHITE else 1);
-        mg[0 if col == chess.WHITE else 1] += mgTable[index][sq];
-        eg[0 if col == chess.WHITE else 1] += egTable[index][sq];
+        mg[index & 1] += mgTable[index][sq];
+        eg[index & 1] += egTable[index][sq];
         gamePhase += gamephaseInc[index];
 
     # tapered evaluation
@@ -227,4 +227,10 @@ def transEval(board):
     mgPhase = min(mgPhase, 24); # in case of early promotion
     egPhase = 24 - mgPhase;
     val = (mgScore * mgPhase + egScore * egPhase) / 24;
-    return val;
+    
+    # adjusting to equilibrium
+    equilVal = 448;
+    isBLack = val < 0;
+    val *= -1 if isBLack else 1;
+    val -= equilVal;
+    return val*(-1 if isBLack else 1);
