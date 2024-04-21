@@ -8,13 +8,13 @@ NUM_SQUARES = len(chess.SQUARES);
 NUM_FILES = 8;
 NUM_CASTLES = 4;
 
-MAX_TABLELEN = 0xffffffff;
+MAX_TABLELEN = 0xffffff;
 
 ranNums = [];
 def ran64():
     newNum = randint(0, MAX_64BIT);
     while newNum in ranNums:
-        newNum = randint(~MAX_64BIT, MAX_64BIT);
+        newNum = randint(0, MAX_64BIT);
     ranNums.append(newNum);
     return newNum;    
 
@@ -89,6 +89,11 @@ class Zobrist():
     
     # we assume args is an array
     def insertEntry(self, hash, args):
+        # clear the entries if we get too many
+        if self.numEntries >= MAX_TABLELEN:
+            for key in list(self.table.keys())[slice(0, MAX_TABLELEN >> 2)]:
+                self.table.pop(key);
+
         self.table[hash] = args;
         self.numEntries += 1;
 
