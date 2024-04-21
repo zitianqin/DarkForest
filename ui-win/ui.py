@@ -153,7 +153,7 @@ class Window(Tk):
 		cM = self.cM.get();
 		offset = sqS * ratS; # offset of black bars around board
 		winXOff = (self.winfo_width() - winS) / 2; # just in case the window gets resized
-		winYOff = (self.winfo_height() - winS - BTN_HEIGHT) / 2;
+		winYOff = (self.winfo_height() - winS - BTN_HEIGHT*2) / 2;
 		sqMOff = sqS - offset; # square side length without offset
 		pixX = event.x - offset - winXOff; # calculate w/out the offset
 		pixY = event.y - offset - winYOff;
