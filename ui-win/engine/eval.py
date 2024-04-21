@@ -43,7 +43,7 @@ def evalChecks(board):
 # adds value for centre control
 def centreCtrlVal(board):
     # check for early game
-    numEGMoves = 24;
+    numEGMoves = 8;
     numMovesPlayed = len(board.move_stack);
     if not (numMovesPlayed <= numEGMoves): return 0;
     scale = (numEGMoves - numMovesPlayed + 1)/numEGMoves; # first 24 moves count as early game

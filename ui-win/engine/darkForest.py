@@ -68,7 +68,7 @@ def minimaxPrune(board, depth, ext, alp, bet, debugging):
             print(f"{nextEvals} = {nextEval} --> {move}");# \x1B[0m");
 
         # insert into Zobrist hash table (BROKEN)
-        # if not hashExists: board.zobrist.insertEntry(hash, [nextEval, nextEvals]);
+        if not hashExists: board.zobrist.insertEntry(hash, [nextEval, nextEvals]);
         
         # we've found a more delicious move
         if (
